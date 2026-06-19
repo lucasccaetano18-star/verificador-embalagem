@@ -1,296 +1,448 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Verificador de Embalagem</title>
-    <style>
-        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-        body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:#000; color:#fff; height:100vh; display:flex; flex-direction:column; overflow:hidden; user-select:none; }
-        .cam-wrap { position:relative; flex:1; overflow:hidden; touch-action:none; background:#111; }
-        video { width:100%; height:100%; object-fit:cover; display:block; }
-        .start-screen { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#000; gap:16px; padding:24px; }
-        .start-screen.hidden { display:none; }
-        .start-icon { font-size:56px; }
-        .start-title { font-size:20px; font-weight:700; text-align:center; }
-        .start-sub { font-size:13px; color:#666; text-align:center; line-height:1.5; }
-        .start-btn { margin-top:8px; padding:16px 36px; background:#3b82f6; color:#fff; border:none; border-radius:14px; font-size:16px; font-weight:700; cursor:pointer; }
-        .start-btn:active { transform:scale(.96); }
-        .err-screen { position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; background:#0a0a0a; gap:12px; padding:24px; }
-        .err-screen.show { display:flex; }
-        .err-icon { font-size:48px; }
-        .err-title { font-size:18px; font-weight:700; color:#ef4444; text-align:center; }
-        .err-steps { font-size:13px; color:#888; text-align:left; line-height:1.8; max-width:300px; }
-        .err-steps b { color:#ccc; }
-        .err-retry { margin-top:8px; padding:14px 28px; background:#333; color:#fff; border:1px solid #444; border-radius:12px; font-size:14px; font-weight:600; cursor:pointer; }
-        .zone { position:absolute; border:2.5px dashed; border-radius:10px; touch-action:none; min-width:60px; min-height:50px; }
-        .zone-1 { border-color:#f97316; background:rgba(249,115,22,.1); }
-        .zone-2 { border-color:#3b82f6; background:rgba(59,130,246,.1); }
-        .zone.ok { border-style:solid; border-color:#22c55e; background:rgba(34,197,94,.14); }
-        .zone.fail { border-style:solid; border-color:#ef4444; background:rgba(239,68,68,.14); }
-        .zone-inner { width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:5px; pointer-events:none; }
-        .zone-label { font-size:10px; font-weight:800; letter-spacing:.5px; text-shadow:0 1px 4px rgba(0,0,0,.9); }
-        .zone-1 .zone-label { color:#fb923c; }
-        .zone-2 .zone-label { color:#60a5fa; }
-        .zone-icon { font-size:20px; }
-        .zone-hint { font-size:9px; color:rgba(255,255,255,.4); }
-        .rh { position:absolute; width:18px; height:18px; background:rgba(255,255,255,.85); border-radius:3px; touch-action:none; z-index:10; }
-        .rh-tl { top:-4px; left:-4px; cursor:nw-resize; }
-        .rh-tr { top:-4px; right:-4px; cursor:ne-resize; }
-        .rh-bl { bottom:-4px; left:-4px; cursor:sw-resize; }
-        .rh-br { bottom:-4px; right:-4px; cursor:se-resize; }
-        .result-overlay { position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; background:rgba(0,0,0,.78); gap:10px; }
-        .result-overlay.show { display:flex; }
-        .res-icon { font-size:72px; }
-        .res-text { font-size:26px; font-weight:800; text-align:center; }
-        .res-text.ok { color:#22c55e; }
-        .res-text.fail { color:#ef4444; }
-        .res-sub { font-size:14px; color:#aaa; text-align:center; }
-        .panel { background:#111; padding:10px 12px 12px; display:flex; flex-direction:column; gap:8px; border-top:1px solid #1e1e1e; }
-        .phase-label { font-size:11px; color:#555; font-weight:600; letter-spacing:.4px; text-align:center; text-transform:uppercase; }
-        .status-row { display:flex; gap:8px; }
-        .zone-card { flex:1; background:#1a1a1a; border-radius:10px; padding:8px 10px; border:1px solid #252525; display:flex; align-items:center; gap:8px; transition:border-color .3s,background .3s; }
-        .zone-card.ok { border-color:#22c55e; background:rgba(34,197,94,.07); }
-        .zone-card.fail { border-color:#ef4444; background:rgba(239,68,68,.07); }
-        .dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; transition:background .3s; }
-        .d1 { background:#f97316; } .d2 { background:#3b82f6; }
-        .dot.ok { background:#22c55e; } .dot.fail { background:#ef4444; }
-        .card-text { font-size:11px; line-height:1.3; }
-        .card-title { font-weight:700; color:#ccc; }
-        .card-state { color:#555; margin-top:1px; }
-        .card-state.ok { color:#22c55e; } .card-state.fail { color:#ef4444; } .card-state.cal { color:#888; }
-        .actions { display:flex; gap:8px; }
-        .btn { flex:1; padding:12px 6px; border-radius:11px; border:none; font-size:13px; font-weight:700; cursor:pointer; transition:opacity .2s,transform .1s; }
-        .btn:active { transform:scale(.96); }
-        .btn:disabled { opacity:.3; cursor:not-allowed; }
-        .btn-orange { background:#f97316; color:#fff; }
-        .btn-blue { background:#3b82f6; color:#fff; }
-        .btn-red { background:#ef4444; color:#fff; }
-        .btn-gray { background:#2a2a2a; color:#888; }
-        .sens-row { display:flex; align-items:center; gap:8px; }
-        .sens-row label { font-size:11px; color:#444; white-space:nowrap; }
-        .sens-row input { flex:1; accent-color:#3b82f6; height:3px; }
-        .sens-val { font-size:11px; color:#555; width:18px; text-align:right; }
-        canvas { display:none; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Verificador de Embalagem</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:#111;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;height:100dvh;display:flex;flex-direction:column;overflow:hidden;}
+#startScreen{position:fixed;inset:0;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;z-index:100;padding:32px;}
+#startScreen h1{font-size:22px;font-weight:700;text-align:center;color:#fff;}
+#startScreen p{font-size:14px;color:#aaa;text-align:center;max-width:280px;}
+.start-btn{background:#2a7af5;color:#fff;border:none;border-radius:14px;padding:16px 40px;font-size:17px;font-weight:700;cursor:pointer;width:100%;max-width:280px;}
+#errScreen{position:fixed;inset:0;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:100;padding:32px;display:none;}
+#errScreen p{font-size:15px;color:#f55;text-align:center;}
+.retry-btn{background:#333;color:#fff;border:none;border-radius:10px;padding:12px 28px;font-size:15px;cursor:pointer;}
+#header{background:#1a1a1a;padding:8px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0;}
+#phaseLabel{font-size:12px;color:#aaa;flex:1;}
+#sensWrap{display:flex;align-items:center;gap:6px;font-size:12px;color:#888;}
+#sensV{font-size:12px;color:#aaa;}
+input[type=range]{width:70px;height:4px;accent-color:#2a7af5;}
+#cards{display:flex;gap:8px;padding:8px;flex-shrink:0;}
+.zone-card{flex:1;background:#1e1e1e;border-radius:10px;padding:10px;border:1px solid #333;transition:border-color .3s;}
+.zone-card.ok{border-color:#2a7;}
+.zone-card.fail{border-color:#f55;}
+.card-top{display:flex;align-items:center;gap:8px;}
+.dot{width:10px;height:10px;border-radius:50%;background:#444;flex-shrink:0;transition:background .3s;}
+.dot.ok{background:#2a7;}
+.dot.fail{background:#f55;}
+.dot.d1{background:#555;}
+.dot.d2{background:#555;}
+.card-title{font-size:13px;font-weight:600;}
+.card-state{font-size:11px;color:#888;margin-top:4px;}
+.card-state.ok{color:#2a7;}
+.card-state.fail{color:#f55;}
+.card-state.cal{color:#fa0;}
+#camWrap{flex:1;position:relative;overflow:hidden;background:#000;}
+video{width:100%;height:100%;object-fit:cover;}
+.zone{position:absolute;border:2px dashed rgba(255,255,255,0.6);border-radius:6px;background:rgba(255,255,255,0.05);touch-action:none;cursor:move;min-width:60px;min-height:50px;}
+.zone.ok{border:2px solid #2a7;background:rgba(40,170,100,0.15);}
+.zone.fail{border:2px solid #f55;background:rgba(255,85,85,0.15);}
+.zone-icon{position:absolute;top:4px;left:50%;transform:translateX(-50%);font-size:18px;pointer-events:none;}
+.zone-hint{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);font-size:10px;color:rgba(255,255,255,0.5);pointer-events:none;white-space:nowrap;}
+.rh{position:absolute;width:22px;height:22px;z-index:10;touch-action:none;cursor:nwse-resize;}
+.rh-tl{top:-4px;left:-4px;cursor:nw-resize;}
+.rh-tr{top:-4px;right:-4px;cursor:ne-resize;}
+.rh-bl{bottom:-4px;left:-4px;cursor:sw-resize;}
+.rh-br{bottom:-4px;right:-4px;cursor:se-resize;}
+#actionRow{padding:8px;display:flex;gap:8px;flex-shrink:0;}
+.btn{flex:1;padding:12px 8px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;color:#fff;}
+.btn-orange{background:#e07000;}
+.btn-blue{background:#2a7af5;}
+.btn-red{background:#c0392b;}
+.btn-gray{background:#444;}
+.btn:disabled{opacity:0.4;cursor:default;}
+,result-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:200;opacity:0;pointer-events:none;transition:opacity .3s;}
+.result-overlay.show{opacity:1;pointer-events:all;}
+.res-icon{font-size:72px;}
+.res-text{font-size:32px;font-weight:900;}
+.res-text.ok{color:#2a7;}
+.res-text.fail{color:#f55;}
+.res-sub{font-size:14px;color:#aaa;text-align:center;}
+</style>
 </head>
 <body>
-<div class="cam-wrap" id="camWrap">
-    <video id="video" autoplay playsinline muted></video>
-    <div class="start-screen" id="startScreen">
-        <div class="start-icon">&#128247;</div>
-        <div class="start-title">Verificador de Embalagem</div>
-        <div class="start-sub">Toque em "Iniciar c&#226;mera" e<br>aceite a permiss&#227;o quando solicitado.</div>
-        <button class="start-btn" onclick="startCamera()">Iniciar c&#226;mera</button>
-    </div>
-    <div class="err-screen" id="errScreen">
-        <div class="err-icon">&#128683;</div>
-        <div class="err-title">C&#226;mera bloqueada</div>
-        <div class="err-steps">
-            <b>iPhone/Safari:</b><br>
-            Ajustes &#8594; Safari &#8594; C&#226;mera &#8594; Permitir<br><br>
-            <b>Chrome (notebook):</b><br>
-            Clique no &#128274; na barra de endere&#231;o<br>
-            &#8594; C&#226;mera &#8594; Permitir<br><br>
-            Depois atualize a p&#225;gina.
-        </div>
-        <button class="err-retry" onclick="retryCamera()">&#8634; Tentar novamente</button>
-    </div>
-    <div class="zone zone-1" id="zone1" style="left:8%;top:8%;width:36%;height:38%">
-        <div class="rh rh-tl" data-zone="1" data-corner="tl"></div>
-        <div class="rh rh-tr" data-zone="1" data-corner="tr"></div>
-        <div class="rh rh-bl" data-zone="1" data-corner="bl"></div>
-        <div class="rh rh-br" data-zone="1" data-corner="br"></div>
-        <div class="zone-inner">
-            <div class="zone-label">ZONA 1 &mdash; KIT</div>
-            <div class="zone-icon" id="icon1">&#128294;</div>
-            <div class="zone-hint" id="hint1">arrastar &middot; al&#231;as p/ redimensionar</div>
-        </div>
-    </div>
-    <div class="zone zone-2" id="zone2" style="left:56%;top:8%;width:36%;height:38%">
-        <div class="rh rh-tl" data-zone="2" data-corner="tl"></div>
-        <div class="rh rh-tr" data-zone="2" data-corner="tr"></div>
-        <div class="rh rh-bl" data-zone="2" data-corner="bl"></div>
-        <div class="rh rh-br" data-zone="2" data-corner="br"></div>
-        <div class="zone-inner">
-            <div class="zone-label">ZONA 2 &mdash; CAIXA</div>
-            <div class="zone-icon" id="icon2">&#128363;</div>
-            <div class="zone-hint" id="hint2">arrastar &middot; al&#231;as p/ redimensionar</div>
-        </div>
-    </div>
-    <div class="result-overlay" id="resOverlay">
-        <div class="res-icon" id="resIcon"></div>
-        <div class="res-text" id="resText"></div>
-        <div class="res-sub" id="resSub"></div>
-    </div>
+
+<div id="startScreen">
+  <div style="font-size:48px">&#128247;</div>
+  <h1>Verificador de Embalagem</h1>
+  <p>Posicione as zonas sobre a esteira e calibre para iniciar o monitoramento</p>
+  <button class="start-btn" onclick="startCamera()">Iniciar cÃ¢mera</button>
 </div>
-<div class="panel">
-    <div class="phase-label" id="phaseLabel">Posicione as zonas e calibre</div>
-    <div class="status-row">
-        <div class="zone-card" id="card1">
-            <div class="dot d1" id="dot1"></div>
-            <div class="card-text">
-                <div class="card-title">Kit na mesa</div>
-                <div class="card-state" id="state1">Aguardando calibra&#231;&#227;o</div>
-            </div>
-        </div>
-        <div class="zone-card" id="card2">
-            <div class="dot d2" id="dot2"></div>
-            <div class="card-text">
-                <div class="card-title">Kit na caixa</div>
-                <div class="card-state" id="state2">Aguardando calibra&#231;&#227;o</div>
-            </div>
-        </div>
-    </div>
-    <div class="actions" id="actionRow">
-        <button class="btn btn-orange" id="btnCal1" onclick="calibrateZone(1)">Calibrar Zona 1</button>
-        <button class="btn btn-blue" id="btnCal2" onclick="calibrateZone(2)" disabled>Calibrar Zona 2</button>
-    </div>
-    <div class="sens-row">
-        <label>Sensibilidade</label>
-        <input type="range" id="sens" min="1" max="10" value="6">
-        <span class="sens-val" id="sensVal">6</span>
-    </div>
+
+<div id="errScreen">
+  <div style="font-size:40px">&#9888;</div>
+  <p id="errMsg">CÃ¢mera nÃ£o disponÃ­vel</p>
+  <button class="retry-btn" onclick="retryCamera()">Tentar novamente</button>
 </div>
+
+<div id="header">
+  <span id="phaseLabel">Aguardando cÃ¢mera...</span>
+  <div id="sensWrap">
+    <span>Sens</span>
+    <input type="range" id="sens" min="1" max="10" value="5">
+    <span id="sensV">5</span>
+  </div>
+</div>
+
+<div id="cards">
+  <div class="zone-card" id="card1">
+    <div class="card-top">
+      <div class="dot d1" id="dot1"></div>
+      <span class="card-title">Zona 1</span>
+    </div>
+    <div class="card-state" id="state1">Aguardando calibraÃ§Ã£o</div>
+  </div>
+  <div class="zone-card" id="card2">
+    <div class="card-top">
+      <div class="dot d2" id="dot2"></div>
+      <span class="card-title">Zona 2</span>
+    </div>
+    <div class="card-state" id="state2">Aguardando calibraÃ§Ã£o</div>
+  </div>
+</div>
+
+<div id="camWrap">
+  <video id="video" autoplay playsinline muted></video>
+  <div class="zone" id="zone1" style="left:5%;top:20%;width:40f;height:55%">
+    <div class="zone-icon" id="icon1">&#128294;</div>
+    <div class="zone-hint" id="hint1">arrastar</div>
+    <div class="rh rh-tl" data-corner="tl"></div>
+    <div class="rh rh-tr" data-corner="tr"></div>
+    <div class="rh rh-bl" data-corner="bl"></div>
+    <div class="rh rh-br" data-corner="br"></div>
+  </div>
+  <div class="zone" id="zone2" style="left:55%;top:20%;width:40%;height:55%">
+    <div class="zone-icon" id="icon2">&#128363;</div>
+    <div class="zone-hint" id="hint2">arrastar</div>
+    <div class="rh rh-tl" data-corner="tl"></div>
+    <div class="rh rh-tr" data-corner="tr"></div>
+    <div class="rh rh-bl" data-corner="bl"></div>
+    <div class="rh rh-br" data-corner="br"></div>
+  </div>
+</div>
+
+<div id="actionRow"></div>
+
+<div class="result-overlay" id="resOverlay">
+  <div class="res-icon" id="resIcon"></div>
+  <div class="res-text" id="resText"></div>
+  <div class="res-sub" id="resSub"></div>
+</div>
+
 <canvas id="canvas"></canvas>
+
 <script>
-    let ref1=null,ref2=null,z1ok=false,z2ok=false,timer=null,phase='setup';
-    const video=document.getElementById('video');
-    const canvas=document.getElementById('canvas');
-    const ctx=canvas.getContext('2d');
-    const wrap=document.getElementById('camWrap');
-    const sensEl=document.getElementById('sens');
-    sensEl.addEventListener('input',()=>document.getElementById('sensVal').textContent=sensEl.value);
+(function() {
+  var ref1 = null, ref2 = null, z1ok = false, z2ok = false;
+  var timer = null, phase = 'setup';
+  var video = document.getElementById('video');
+  var canvas = document.getElementById('canvas');
+  var ctx = canvas.getContext('2d');
+  var wrap = document.getElementById('camWrap');
+  var sensEl = document.getElementById('sens');
 
-    async function startCamera(){
-        document.getElementById('startScreen').classList.add('hidden');
-        try{
-            const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280}}});
-            video.srcObject=stream;
-            document.getElementById('errScreen').classList.remove('show');
-        }catch(e){ showCameraError(); }
-    }
-    function showCameraError(){ document.getElementById('errScreen').classList.add('show'); }
-    function retryCamera(){ document.getElementById('errScreen').classList.remove('show'); document.getElementById('startScreen').classList.remove('hidden'); }
+  sensEl.addEventListener('input', function() {
+    document.getElementById('sensV').textContent = sensEl.value;
+  });
 
-    function makeDraggable(el){
-        let ox=0,oy=0;
-        const inner=el.querySelector('.zone-inner');
-        const move=(cx,cy)=>{
-            const wr=wrap.getBoundingClientRect(),er=el.getBoundingClientRect();
-            let l=(cx-wr.left-ox)/wr.width*100,t=(cy-wr.top-oy)/wr.height*100;
-            l=Math.max(0,Math.min(l,100-er.width/wr.width*100));
-            t=Math.max(0,Math.min(t,100-er.height/wr.height*100));
-            el.style.left=l+'%'; el.style.top=t+'%';
-        };
-        inner.addEventListener('touchstart',e=>{if(phase==='monitoring')return;e.preventDefault();const r=el.getBoundingClientRect();ox=e.touches[0].clientX-r.left;oy=e.touches[0].clientY-r.top;},{passive:false});
-        inner.addEventListener('touchmove',e=>{if(phase==='monitoring')return;e.preventDefault();move(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
-        inner.addEventListener('mousedown',e=>{if(phase==='monitoring')return;e.preventDefault();ox=e.offsetX+(e.target!==el?e.target.offsetLeft:0);oy=e.offsetY+(e.target!==el?e.target.offsetTop:0);const mm=ev=>move(ev.clientX,ev.clientY);const mu=()=>{document.removeEventListener('mousemove',mm);document.removeEventListener('mouseup',mu);};document.addEventListener('mousemove',mm);document.addEventListener('mouseup',mu);});
-    }
+  function startCamera() {
+    document.getElementById('startScreen').style.display = 'none';
+    var opts = { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }, audio: false };
+    navigator.mediaDevices.getUserMedia(opts).then(function(stream) {
+      video.srcObject = stream;
+      video.play();
+      setPhase('Posicione as zonas e calibre');
+      makeDraggable(document.getElementById('zone1'));
+      makeDraggable(document.getElementById('zone2'));
+      makeResizable(document.getElementById('zone1'));
+      makeResizable(document.getElementById('zone2'));
+      setActionRow('calibrate');
+    }).catch(function(err) {
+      showCameraError(err.message || 'Erro ao acessar cÃ¢mera');
+    });
+  }
 
-    function makeResizable(el){
-        el.querySelectorAll('.rh').forEach(h=>{
-            const corner=h.dataset.corner;
-            const onMove=(cx,cy)=>{
-                const wr=wrap.getBoundingClientRect(),er=el.getBoundingClientRect();
-                const MIN=60,MINH=50;
-                let left=er.left-wr.left,top=er.top-wr.top,right=er.right-wr.left,bottom=er.bottom-wr.top;
-                if(corner==='br'){right=cx-wr.left;bottom=cy-wr.top;}
-                if(corner==='bl'){left=cx-wr.left;bottom=cy-wr.top;}
-                if(corner==='tr'){right=cx-wr.left;top=cy-wr.top;}
-                if(corner==='tl'){left=cx-wr.left;top=cy-wr.top;}
-                if(right-left<MIN){if(corner==='bl'||corner==='tl')left=right-MIN;else right=left+MIN;}
-                if(bottom-top<MINH){if(corner==='tl'||corner==='tr')top=bottom-MINH;else bottom=top+MINH;}
-                left=Math.max(0,left);top=Math.max(0,top);right=Math.min(wr.width,right);bottom=Math.min(wr.height,bottom);
-                el.style.left=(left/wr.width*100)+'%';el.style.top=(top/wr.height*100)+'%';
-                el.style.width=((right-left)/wr.width*100)+'%';el.style.height=((bottom-top)/wr.height*100)+'%';
-            };
-            h.addEventListener('touchstart',e=>{if(phase==='monitoring')return;e.preventDefault();e.stopPropagation();},{passive:false});
-            h.addEventListener('touchmove',e=>{if(phase==='monitoring')return;e.preventDefault();e.stopPropagation();onMove(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
-            h.addEventListener('mousedown',e=>{if(phase==='monitoring')return;e.preventDefault();e.stopPropagation();const mm=ev=>onMove(ev.clientX,ev.clientY);const mu=()=>{document.removeEventListener('mousemove',mm);document.removeEventListener('mouseup',mu);};document.addEventListener('mousemove',mm);document.addEventListener('mouseup',mu);});
-        });
-    }
+  function showCameraError(msg) {
+    document.getElementById('errMsg').textContent = msg || 'CÃ¢mera nÃ£o disponÃ­vel';
+    document.getElementById('errScreen').style.display = 'flex';
+  }
 
-    makeDraggable(document.getElementById('zone1'));
-    makeDraggable(document.getElementById('zone2'));
-    makeResizable(document.getElementById('zone1'));
-    makeResizable(document.getElementById('zone2'));
+  function retryCamera() {
+    document.getElementById('errScreen').style.display = 'none';
+    document.getElementById('startScreen').style.display = 'flex';
+  }
 
-    function capture(zoneEl){
-        const wr=wrap.getBoundingClientRect(),zr=zoneEl.getBoundingClientRect();
-        canvas.width=wr.width;canvas.height=wr.height;
-        ctx.drawImage(video,0,0,wr.width,wr.height);
-        const x=Math.max(0,zr.left-wr.left),y=Math.max(0,zr.top-wr.top);
-        const w=Math.min(zr.width,wr.width-x),h=Math.min(zr.height,wr.height-y);
-        return ctx.getImageData(x,y,w,h);
+  function makeDraggable(el) {
+    var startX, startY, origL, origT;
+    function moveStart(cx, cy) {
+      var er = el.getBoundingClientRect();
+      var wr = wrap.getBoundingClientRect();
+      startX = cx; startY = cy;
+      origL = er.left - wr.left;
+      origT = er.top - wr.top;
     }
-    function pixelDiff(a,b){
-        const d1=a.data,d2=b.data,len=Math.min(d1.length,d2.length);
-        let changed=0,total=0;
-        for(let i=0;i<len;i+=4){if((Math.abs(d1[i]-d2[i])+Math.abs(d1[i+1]-d2[i+1])+Math.abs(d1[i+2]-d2[i+2]))/3>20)changed++;total++;}
-        return(changed/total)*100;
+    function moveTo(cx, cy) {
+      var wr = wrap.getBoundingClientRect();
+      var dx = cx - startX, dy = cy - startY;
+      var nl = Math.max(0, Math.min(wr.width - el.offsetWidth, origL + dx));
+      var nt = Math.max(0, Math.min(wr.height - el.offsetHeight, origT + dy));
+      el.style.left = (nl / wr.width * 100) + '%';
+      el.style.top = (nt / wr.height * 100) + '%';
     }
-    function threshold(){return 8-(parseInt(sensEl.value)-1)*0.72;}
+    el.addEventListener('touchstart', function(e) {
+      if (phase === 'monitoring') return;
+      if (e.target.classList.contains('rh')) return;
+      e.preventDefault();
+      moveStart(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: false });
+    el.addEventListener('touchmove', function(e) {
+      if (phase === 'monitoring') return;
+      e.preventDefault();
+      moveTo(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: false });
+    el.addEventListener('mousedown', function(e) {
+      if (phase === 'monitoring') return;
+      if (e.target.classList.contains('rh')) return;
+      e.preventDefault();
+      moveStart(e.clientX, e.clientY);
+      function onMove(ev) { moveTo(ev.clientX, ev.clientY); }
+      function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  }
 
-    function calibrateZone(n){
-        const el=document.getElementById('zone'+n);
-        if(n===1){ref1=capture(el);z1ok=false;setState(1,'cal','Calibrado - aguardando');document.getElementById('btnCal1').disabled=true;document.getElementById('btnCal2').disabled=false;setPhase('Agora calibre a Zona 2 (caixa com pecas, sem kit)');}
-        else{ref2=capture(el);z2ok=false;setState(2,'cal','Calibrado - aguardando');startMonitoring();}
-        if(navigator.vibrate)navigator.vibrate([60,30,60]);
+  function makeResizable(el) {
+    var handles = el.querySelectorAll('.rh');
+    for (var i = 0; i < handles.length; i++) {
+      attachResizeHandle(el, handles[i]);
     }
+  }
 
-    function startMonitoring(){
-        phase='monitoring';setPhase('Monitorando automaticamente...');
-        document.getElementById('actionRow').innerHTML='<button class="btn btn-red" onclick="stopAndCheck()">Fechar caixa agora</button><button class="btn btn-gray" onclick="resetAll()">Reiniciar</button>';
-        document.getElementById('hint1').textContent='';document.getElementById('hint2').textContent='';
-        timer=setInterval(check,900);
+  function attachResizeHandle(el, h) {
+    var corner = h.dataset.corner;
+    function onMove(cx, cy) {
+      var wr = wrap.getBoundingClientRect();
+      var er = el.getBoundingClientRect();
+      var MIN = 60, MINH = 50;
+      var left = er.left - wr.left;
+      var top = er.top - wr.top;
+      var right = er.right - wr.left;
+      var bottom = er.bottom - wr.top;
+      if (corner === 'br') { right = cx - wr.left; bottom = cy - wr.top; }
+      if (corner === 'bl') { left = cx - wr.left; bottom = cy - wr.top; }
+      if (corner === 'tr') { right = cx - wr.left; top = cy - wr.top; }
+      if (corner === 'tl') { left = cx - wr.left; top = cy - wr.top; }
+      if (right - left < MIN) { if (corner === 'bl' || corner === 'tl') { left = right - MIN; } else { right = left + MIN; } }
+      if (bottom - top < MINH) { if (corner === 'tl' || corner === 'tr') { top = bottom - MINH; } else { bottom = top + MINH; } }
+      left = Math.max(0, left); top = Math.max(0, top);
+      right = Math.min(wr.width, right); bottom = Math.min(wr.height, bottom);
+      el.style.left = (left / wr.width * 100) + '%';
+      el.style.top = (top / wr.height * 100) + '%';
+      el.style.width = ((right - left) / wr.width * 100) + '%';
+      el.style.height = ((bottom - top) / wr.height * 100) + '%';
     }
-    function check(){
-        const thr=threshold();
-        if(ref1&&!z1ok&&pixelDiff(ref1,capture(document.getElementById('zone1')))>thr){z1ok=true;setZone(1,'ok');setState(1,'ok','Kit pegou');vib([80]);}
-        if(ref2&&!z2ok&&pixelDiff(ref2,capture(document.getElementById('zone2')))>thr){z2ok=true;setZone(2,'ok');setState(2,'ok','Kit colocou');vib([80]);}
-        if(z1ok&&z2ok){clearInterval(timer);showResult(true);}
+    h.addEventListener('touchstart', function(e) {
+      if (phase === 'monitoring') return;
+      e.preventDefault(); e.stopPropagation();
+    }, { passive: false });
+    h.addEventListener('touchmove', function(e) {
+      if (phase === 'monitoring') return;
+      e.preventDefault(); e.stopPropagation();
+      onMove(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: false });
+    h.addEventListener('mousedown', function(e) {
+      if (phase === 'monitoring') return;
+      e.preventDefault(); e.stopPropagation();
+      function onMm(ev) { onMove(ev.clientX, ev.clientY); }
+      function onMu() {
+        document.removeEventListener('mousemove', onMm);
+        document.removeEventListener('mouseup', onMu);
+      }
+      document.addEventListener('mousemove', onMm);
+      document.addEventListener('mouseup', onMu);
+    });
+  }
+
+  function capture(zoneEl) {
+    var wr = wrap.getBoundingClientRect();
+    var zr = zoneEl.getBoundingClientRect();
+    var sw = Math.round((zr.width / wr.width) * video.videoWidth);
+    var sh = Math.round((zr.height / wr.height) * video.videoHeight);
+    var sx = Math.round(((zr.left - wr.left) / wr.width) * video.videoWidth);
+    var sy = Math.round(((zr.top - wr.top) / wr.height) * video.videoHeight);
+    if (sw < 1 || sh < 1) return null;
+    canvas.width = sw; canvas.height = sh;
+    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+    return ctx.getImageData(0, 0, sw, sh);
+  }
+
+  function pixelDiff(a, b) {
+    if (!a || !b || a.data.length !== b.data.length) return 0;
+    var diff = 0, len = a.data.length;
+    for (var i = 0; i < len; i += 4) {
+      diff += Math.abs(a.data[i] - b.data[i]);
+      diff += Math.abs(a.data[i+1] - b.data[i+1]);
+      diff += Math.abs(a.data[i+2] - b.data[i+2]);
     }
-    function stopAndCheck(){
-        clearInterval(timer);
-        if(!z2ok){if(!z1ok){setZone(1,'fail');setState(1,'fail','Kit ainda na mesa');}setZone(2,'fail');setState(2,'fail','Kit nao colocado');showResult(false);}
-        else{showResult(true);}
+    return diff / (len / 4);
+  }
+
+  function threshold() {
+    return 8 - (parseInt(sensEl.value) - 1) * 0.72;
+  }
+
+  function calibrateZone(n) {
+    if (n === 1) {
+      ref1 = capture(document.getElementById('zone1'));
+      setZone(1, 'cal'); setState(1, 'cal', 'Zona 1 calibrada');
+      document.getElementById('icon1').textContent = 'OK';
+      document.getElementById('btnCal2').disabled = false;
+    } else {
+      ref2 = capture(document.getElementById('zone2'));
+      setZone(2, 'cal'); setState(2, 'cal', 'Zona 2 calibrada');
+      document.getElementById('icon2').textContent = 'OK';
+      startMonitoring();
     }
-    function showResult(ok){
-        const ov=document.getElementById('resOverlay');ov.className='result-overlay show';
-        document.getElementById('resIcon').textContent=ok?'OK':'!';
-        const rt=document.getElementById('resText');rt.className='res-text '+(ok?'ok':'fail');rt.textContent=ok?'EMBALAGEM OK':'KIT AUSENTE!';
-        const rs=document.getElementById('resSub');
-        if(ok){rs.textContent='Kit detectado na caixa';vib([100,50,100]);setTimeout(()=>{ov.className='result-overlay';resetForNext();},2500);}
-        else{rs.innerHTML='Verifique antes de fechar<br><button onclick="resetForNext()" style="margin-top:14px;padding:10px 28px;border-radius:10px;background:#222;color:white;border:1px solid #444;font-size:14px;font-weight:700">Corrigir</button>';vib([600]);}
+  }
+
+  function startMonitoring() {
+    phase = 'monitoring';
+    setPhase('Monitorando automaticamente...');
+    document.getElementById('hint1').textContent = '';
+    document.getElementById('hint2').textContent = '';
+    setActionRow('monitoring');
+    timer = window.setInterval(check, 900);
+  }
+
+  function check() {
+    var thr = threshold();
+    var z1 = document.getElementById('zone1');
+    var z2 = document.getElementById('zone2');
+    if (ref1 && !z1ok && pixelDiff(ref1, capture(z1)) > thr) {
+      z1ok = true; setZone(1, 'ok'); setState(1, 'ok', 'Kit pegou'); vib([80]);
     }
-    function resetForNext(){
-        document.getElementById('resOverlay').className='result-overlay';
-        z1ok=false;z2ok=false;setZone(1,'');setZone(2,'');
-        setState(1,'cal','Aguardando...');setState(2,'cal','Aguardando...');
-        document.getElementById('icon1').textContent='&#128294;';document.getElementById('icon2').textContent='&#128363;';
-        setPhase('Monitorando - proxima embalagem');timer=setInterval(check,900);
+    if (ref2 && !z2ok && pixelDiff(ref2, capture(z2)) > thr) {
+      z2ok = true; setZone(2, 'ok'); setState(2, 'ok', 'Kit colocou'); vib([80]);
     }
-    function resetAll(){
-  2     clearInterval(timer);ref1=ref2=null;z1ok=z2ok=false;phase='setup';
-        document.getElementById('resOverlay').className='result-overlay';
-        setZone(1,'');setZone(2,'');setState(1,'','Aguardando calibracao');setState(2,'','Aguardando calibracao');
-        document.getElementById('icon1').textContent='&#128294;';document.getElementById('icon2').textContent='&#128363;';
-        document.getElementById('hint1').textContent='arrastar';document.getElementById('hint2').textContent='arrastar';
-        document.getElementById('actionRow').innerHTML='<button class="btn btn-orange" id="btnCal1" onclick="calibrateZone(1)">Calibrar Zona 1</button><button class="btn btn-blue" id="btnCal2" onclick="calibrateZone(2)" disabled>Calibrar Zona 2</button>';
-        setPhase('Posicione as zonas e calibre');
+    if (z1ok && z2ok) {
+      window.clearInterval(timer);
+      showResult(true);
     }
-    function setZone(n,state){
-        const z=document.getElementById('zone'+n);z.className='zone zone-'+n+(state?' '+state:'');
-        document.getElementById('icon'+n).textContent=state==='ok'?'OK':state==='fail'?'!':n===1?'&#128294;':'&#128363;';
+  }
+
+  function stopAndCheck() {
+    window.clearInterval(timer);
+    if (!z2ok) {
+      if (!z1ok) { setZone(1, 'fail'); setState(1, 'fail', 'Kit ainda na mesa'); }
+      setZone(2, 'fail'); setState(2, 'fail', 'Kit nÃ£o colocado');
+      showResult(false);
+    } else {
+      showResult(true);
     }
-    function setState(n,cls,text){
-        document.getElementById('dot'+n).className='dot '+(cls==='ok'?'ok':cls==='fail'?'fail':'d'+n);
-        document.getElementById('card'+n).className='zone-card'+(cls==='ok'?' ok':cls==='fail'?' fail':'');
-        const s=document.getElementById('state'+n);s.className='card-state'+(cls?' '+cls:'');s.textContent=text;
+  }
+
+  function showResult(ok) {
+    var ov = document.getElementById('resOverlay');
+    ov.className = 'result-overlay show';
+    document.getElementById('resIcon').textContent = ok ? 'â' : 'â';
+    var rt = document.getElementById('resText');
+    rt.className = 'res-text ' + (ok ? 'ok' : 'fail');
+    rt.textContent = ok ? 'EMBALAGEM OK' : 'KIT AUSENTE!';
+    var rs = document.getElementById('resSub');
+    if (ok) {
+      rs.textContent = 'Kit detectado na caixa';
+      vib([100, 50, 100]);
+      window.setTimeout(function() { ov.className = 'result-overlay'; resetForNext(); }, 2500);
+    } else {
+      rs.innerHTML = 'Verifique antes de fechar<br><button onclick="window._app.resetForNext()" style="margin-top:14px;padding:10px 28px;border-radius:10px;background:#222;color:white;border:1px solid #444;font-size:14px;font-weight:700">Corrigir</button>';
+      vib([600]);
     }
-    function setPhase(t){document.getElementById('phaseLabel').textContent=t;}
-    function vib(p){if(navigator.vibrate)navigator.vibrate(p);}
+  }
+
+  function resetForNext() {
+    document.getElementById('resOverlay').className = 'result-overlay';
+    z1ok = false; z2ok = false;
+    setZone(1, ''); setZone(2, '');
+    setState(1, 'cal', 'Aguardando...');
+    setState(2, 'cal', 'Aguardando...');
+    document.getElementById('icon1').textContent = '\u{1F526}';
+    document.getElementById('icon2').textContent = '\u{1F56B}';
+    setPhase('Monitorando - prÃ³xima embalagem');
+    timer = window.setInterval(check, 900);
+  }
+
+  function resetAll() {
+    window.clearInterval(timer);
+    ref1 = null; ref2 = null;
+    z1ok = false; z2ok = false;
+    phase = 'setup';
+    document.getElementById('resOverlay').className = 'result-overlay';
+    setZone(1, ''); setZone(2, '');
+    setState(1, '', 'Aguardando calibraÃ§Ã£o');
+    setState(2, '', 'Aguardando calibraÃ§Ã£o');
+    document.getElementById('icon1').textContent = '\u{1F526}';
+    document.getElementById('icon2').textContent = '\u{1F56B}';
+    document.getElementById('hint1').textContent = 'arrastar';
+    document.getElementById('hint2').textContent = 'arrastar';
+    setPhase('Posicione as zonas e calibre');
+    setActionRow('calibrate');
+  }
+
+  function setActionRow(mode) {
+    var row = document.getElementById('actionRow');
+    if (mode === 'calibrate') {
+      row.innerHTML = '<button class="btn btn-orange" id="btnCal1" onclick="window._app.calibrateZone(1)">Calibrar Zona 1</button><button class="btn btn-blue" id="btnCal2" onclick="window._app.calibrateZone(2)" disabled>Calibrar Zona 2</button>';
+    } else {
+      row.innerHTML = '<button class="btn btn-red" onclick="window._app.stopAndCheck()">Fechar caixa agora</button><button class="btn btn-gray" onclick="window._app.resetAll()">Reiniciar</button>';
+    }
+  }
+
+  function setZone(n, state) {
+    var z = document.getElementById('zone' + n);
+    z.className = 'zone' + (state ? ' ' + state : '');
+    var icon = document.getElementById('icon' + n);
+    if (state === 'ok') icon.textContent = 'OK';
+    else if (state === 'fail') icon.textContent = '!';
+    else if (state === 'cal') icon.textContent = 'OK';
+    else icon.textContent = n === 1 ? '\u{1F526}' : '\u{1F56B}';
+  }
+
+  function setState(n, cls, text) {
+    var dot = document.getElementById('dot' + n);
+    dot.className = 'dot ' + (cls === 'ok' ? 'ok' : cls === 'fail' ? 'fail' : 'd' + n);
+    var card = document.getElementById('card' + n);
+    card.className = 'zone-card' + (cls === 'ok' ? ' ok' : cls === 'fail' ? ' fail' : '');
+    var s = document.getElementById('state' + n);
+    s.className = 'card-state' + (cls ? ' ' + cls : '');
+    s.textContent = text;
+  }
+
+  function setPhase(t) {
+    document.getElementById('phaseLabel').textContent = t;
+  }
+
+  function vib(p) {
+    if (navigator.vibrate) navigator.vibrate(p);
+  }
+
+  // Expose needed functions globally for inline onclick handlers
+  window._app = {
+    calibrateZone: calibrateZone,
+    stopAndCheck: stopAndCheck,
+    resetAll: resetAll,
+    resetForNext: resetForNext
+  };
+
+  // Override startCamera for global access
+  window.startCamera = startCamera;
+  window.retryCamera = retryCamera;
+})();
 </script>
 </body>
 </html>
