@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Verificador de Embalagem</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f0f0f;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        header {
+            padding: 14px 16px;
+            text-align: center;
+            background: #1a1a1a;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        header h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.3px; }
+        header p  { font-size: 12px; color: #666; margin-top: 3px; }
+
+        /* ââ Camera ââ */
+        .camera-wrap {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4/3;
+            background: #000;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* guide frame */
+        .guide {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 72%;
+            height: 65%;
+            border: 2.5px solid rgba(255,255,255,0.45);
+            border-radius: 14px;
+            pointer-events: none;
+            transition: border-color .3s, box-shadow .3s;
+        }
+
+        .guide.ok   { border-color: #22c55e; box-shadow: 0 0 28px rgba(34,197,94,.45); }
+        .guide.fail { border-color: #ef4444; box-shadow: 0 0 28px rgba(239,68,68,.45); }
+
+        /* corner accents */
+        .guide::before, .guide::after {
+            content: '';
+            position: absolute;
+            width: 18px; height: 18px;
+            border-color: inherit;
+            border-style: solid;
+        }
+        .guide::before { top: -3px; left: -3px; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+        .guide::after  { bottom: -3px; right: -3px; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+
+        /* result overlay */
+        .result-overlay {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 72%;
+            height: 65%;
+            border-radius: 14px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,.72);
+            gap: 6px;
+        }
+
+        .result-overlay.visible { display: flex; }
+
+        .result-icon  { font-size: 52px; line-height: 1; }
+        .result-label { font-size: 18px; font-weight: 800; text-align: center; line-height: 1.2; }
+        .result-label.ok   { color: #22c55e; }
+        .result-label.fail { color: #ef4444; }
+        .result-sub { font-size: 12px; color: #aaa; }
+
+        /* diff badge */
+        .diff-badge {
+            position: absolute;
+            bottom: 10px; right: 12px;
+            background: rgba(0,0,0,.6);
+            color: #aaa;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 20px;
+            display: none;
+        }
+
+        /* ââ Sensitivity ââ */
+        .sens-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            background: #161616;
+            border-bottom: 1px solid #222;
+        }
+
+        .sens-row label { font-size: 12px; color: #777; white-space: nowrap; }
+        .sens-row input { flex: 1; accent-color: #3b82f6; }
+        .sens-val { font-size: 12px; color: #aaa; width: 24px; text-align: right; }
+
+        /* ââ Steps ââ */
+        .steps {
+            flex: 1;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 14px;
+            background: #1e1e1e;
+            border-radius: 14px;
+            border: 1px solid #2a2a2a;
+            transition: border-color .3s;
+        }
+
+        .step.active-step { border-color: #3b82f6; }
+
+        .num {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            background: #2e2e2e;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 13px;
+            flex-shrink: 0;
+            transition: background .3s;
+        }
+
+        .num.active { background: #3b82f6; }
+        .num.done   { background: #22c55e; font-size: 15px; }
+
+        .step-info { flex: 1; }
+        .step-title { font-size: 14px; font-weight: 600; }
+        .step-desc  { font-size: 12px; color: #666; margin-top: 2px; }
+
+        .btn {
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: none;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: opacity .2s, transform .1s;
+        }
+
+        .btn:active { transform: scale(.96); }
+        .btn:disabled { opacity: .35; cursor: not-allowed; }
+        .btn-blue  { background: #3b82f6; color: #fff; }
+        .btn-green { background: #22c55e; color: #fff; }
+
+        .btn-reset {
+            width: 100%;
+            padding: 13px;
+            border-radius: 12px;
+            background: #1e1e1e;
+            color: #666;
+            border: 1px solid #2a2a2a;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* ââ Calibrated flash ââ */
+        @keyframes flash {
+            0%   { opacity: 0; }
+            20%  { opacity: .5; }
+            100% { opacity: 0; }
+        }
+
+        .flash {
+            position: absolute; inset: 0;
+            background: white;
+            pointer-events: none;
+            animation: flash .4s ease-out forwards;
+        }
+
+        canvas { display: none; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>ð¦ Verificador de Embalagem</h1>
+    <p>Detecta itens faltando antes de fechar a caixa</p>
+</header>
+
+<div class="camera-wrap" id="cameraWrap">
+    <video id="video" autoplay playsinline muted></video>
+
+    <div class="guide" id="guide"></div>
+
+    <div class="result-overlay" id="resultOverlay">
+        <div class="result-icon" id="resIcon"></div>
+        <div class="result-label" id="resLabel"></div>
+        <div class="result-sub"  id="resSub"></div>
+    </div>
+
+    <div class="diff-badge" id="diffBadge"></div>
+</div>
+
+<div class="sens-row">
+    <label for="sens">Sensibilidade</label>
+    <input type="range" id="sens" min="1" max="10" value="5">
+    <span class="sens-val" id="sensVal">5</span>
+</div>
+
+<div class="steps">
+    <div class="step active-step" id="s1">
+        <div class="num active" id="n1">1</div>
+        <div class="step-info">
+            <div class="step-title">Calibrar caixa vazia</div>
+            <div class="step-desc">Aponte para a caixa <strong>sem</strong> o kit e clique</div>
+        </div>
+        <button class="btn btn-blue" id="btnCal" onclick="calibrate()">Calibrar</button>
+    </div>
+
+    <div class="step" id="s2">
+        <div class="num" id="n2">2</div>
+        <div class="step-info">
+            <div class="step-title">Verificar embalagem</div>
+            <div class="step-desc">Coloque o kit, aponte e clique</div>
+        </div>
+        <button class="btn btn-green" id="btnVer" onclick="verify()" disabled>Verificar</button>
+    </div>
+
+    <button class="btn-reset" onclick="reset()">âº RecomeÃ§ar</button>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+    const video      = document.getElementById('video');
+    const canvas     = document.getElementById('canvas');
+    const ctx        = canvas.getContext('2d');
+    const guide      = document.getElementById('guide');
+    const overlay    = document.getElementById('resultOverlay');
+    const resIcon    = document.getElementById('resIcon');
+    const resLabel   = document.getElementById('resLabel');
+    const resSub     = document.getElementById('resSub');
+    const diffBadge  = document.getElementById('diffBadge');
+    const sensSlider = document.getElementById('sens');
+    const sensVal    = document.getElementById('sensVal');
+
+    let referenceData = null;
+
+    /* ââ Camera ââ */
+    async function startCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }
+            });
+            video.srcObject = stream;
+        } catch {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+            } catch {
+                alert('NÃ£o foi possÃ­vel acessar a cÃ¢mera.\nVerifique as permissÃµes do navegador.');
+            }
+        }
+    }
+
+    sensSlider.addEventListener('input', () => { sensVal.textContent = sensSlider.value; });
+
+    /* ââ Frame capture (center crop matching guide box) ââ */
+    function captureFrame() {
+        const vw = video.videoWidth  || 640;
+        const vh = video.videoHeight || 480;
+        canvas.width  = vw;
+        canvas.height = vh;
+        ctx.drawImage(video, 0, 0, vw, vh);
+
+        // Match guide dimensions: 72% wide, 65% tall, centered
+        const x = Math.floor(vw * 0.14);
+        const y = Math.floor(vh * 0.175);
+        const w = Math.floor(vw * 0.72);
+        const h = Math.floor(vh * 0.65);
+        return ctx.getImageData(x, y, w, h);
+    }
+
+    /* ââ Pixel diff (% of pixels that changed significantly) ââ */
+    function pixelDiff(a, b) {
+        const d1 = a.data, d2 = b.data;
+        const len = Math.min(d1.length, d2.length);
+        let changed = 0, total = 0;
+        for (let i = 0; i < len; i += 4) {
+            const dr = Math.abs(d1[i]   - d2[i]);
+            const dg = Math.abs(d1[i+1] - d2[i+1]);
+            const db = Math.abs(d1[i+2] - d2[i+2]);
+            if ((dr + dg + db) / 3 > 18) changed++;
+            total++;
+        }
+        return (changed / total) * 100;
+    }
+
+    /* ââ Flash effect ââ */
+    function flashScreen() {
+        const f = document.createElement('div');
+        f.className = 'flash';
+        document.getElementById('cameraWrap').appendChild(f);
+        setTimeout(() => f.remove(), 450);
+    }
+
+    /* ââ Step 1: Calibrate ââ */
+    function calibrate() {
+        referenceData = captureFrame();
+        flashScreen();
+
+        document.getElementById('n1').className = 'num done';
+        document.getElementById('n1').textContent = 'â';
+        document.getElementById('s1').className = 'step';
+        document.getElementById('n2').className = 'num active';
+        document.getElementById('s2').className = 'step active-step';
+        document.getElementById('btnCal').disabled = true;
+        document.getElementById('btnVer').disabled = false;
+
+        overlay.className = 'result-overlay';
+        guide.className = 'guide';
+    }
+
+    /* ââ Step 2: Verify ââ */
+    function verify() {
+        if (!referenceData) return;
+
+        const current = captureFrame();
+        const diff    = pixelDiff(referenceData, current);
+
+        // Sensitivity 1 â threshold 8% (hard to trigger)
+        // Sensitivity 10 â threshold 1.5% (easy to trigger)
+        const s   = parseInt(sensSlider.value);
+        const thr = 8 - (s - 1) * 0.72;   // 8% â ~1.5%
+
+        const present = diff > thr;
+
+        diffBadge.style.display = 'block';
+        diffBadge.textContent   = `Î ${diff.toFixed(1)}%  (limite: ${thr.toFixed(1)}%)`;
+
+        if (present) {
+            guide.className           = 'guide ok';
+            overlay.className         = 'result-overlay visible';
+            resIcon.textContent       = 'â';
+            resLabel.className        = 'result-label ok';
+            resLabel.textContent      = 'KIT PRESENTE';
+            resSub.textContent        = 'Embalagem aprovada';
+            if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+        } else {
+            guide.className           = 'guide fail';
+            overlay.className         = 'result-overlay visible';
+            resIcon.textContent       = 'ð¨';
+            resLabel.className        = 'result-label fail';
+            resLabel.textContent      = 'KIT AUSENTE!';
+            resSub.textContent        = 'Verifique a embalagem';
+            if (navigator.vibrate) navigator.vibrate([600]);
+        }
+    }
+
+    /* ââ Reset ââ */
+    function reset() {
+        referenceData = null;
+
+        document.getElementById('n1').className = 'num active';
+        document.getElementById('n1').textContent = '1';
+        document.getElementById('n2').className = 'num';
+        document.getElementById('n2').textContent = '2';
+        document.getElementById('s1').className = 'step active-step';
+        document.getElementById('s2').className = 'step';
+        document.getElementById('btnCal').disabled = false;
+        document.getElementById('btnVer').disabled = true;
+
+        overlay.className = 'result-overlay';
+        guide.className   = 'guide';
+        diffBadge.style.display = 'none';
+    }
+
+    startCamera();
+</script>
+</body>
+</html>
