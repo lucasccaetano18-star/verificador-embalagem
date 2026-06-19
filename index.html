@@ -3,39 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Verificador de Embalagem</title>
+    <title>Verificador de Embalagem v2</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #0f0f0f;
+            background: #000;
             color: white;
-            min-height: 100vh;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            max-width: 480px;
-            margin: 0 auto;
-        }
-
-        header {
-            padding: 14px 16px;
-            text-align: center;
-            background: #1a1a1a;
-            border-bottom: 1px solid #2a2a2a;
-        }
-
-        header h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.3px; }
-        header p  { font-size: 12px; color: #666; margin-top: 3px; }
-
-        /* ââ Camera ââ */
-        .camera-wrap {
-            position: relative;
-            width: 100%;
-            aspect-ratio: 4/3;
-            background: #000;
             overflow: hidden;
-            flex-shrink: 0;
+            user-select: none;
+        }
+
+        .cam-wrap {
+            position: relative;
+            flex: 1;
+            overflow: hidden;
+            touch-action: none;
         }
 
         video {
@@ -45,363 +32,417 @@
             display: block;
         }
 
-        /* guide frame */
-        .guide {
+        /* ââ Zones ââ */
+        .zone {
             position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 72%;
-            height: 65%;
-            border: 2.5px solid rgba(255,255,255,0.45);
-            border-radius: 14px;
+            border: 2.5px dashed;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px;
+            touch-action: none;
+            min-width: 80px;
+            min-height: 70px;
+        }
+
+        .zone-1 { border-color: #f97316; background: rgba(249,115,22,0.12); }
+        .zone-2 { border-color: #3b82f6; background: rgba(59,130,246,0.12); }
+        .zone.ok   { border-style: solid; border-color: #22c55e; background: rgba(34,197,94,0.15); }
+        .zone.fail { border-style: solid; border-color: #ef4444; background: rgba(239,68,68,0.15); }
+
+        .zone-label {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.9);
             pointer-events: none;
-            transition: border-color .3s, box-shadow .3s;
         }
+        .zone-1 .zone-label { color: #fb923c; }
+        .zone-2 .zone-label { color: #60a5fa; }
 
-        .guide.ok   { border-color: #22c55e; box-shadow: 0 0 28px rgba(34,197,94,.45); }
-        .guide.fail { border-color: #ef4444; box-shadow: 0 0 28px rgba(239,68,68,.45); }
+        .zone-icon { font-size: 22px; pointer-events: none; }
+        .zone-hint { font-size: 9px; color: rgba(255,255,255,0.45); pointer-events: none; }
 
-        /* corner accents */
-        .guide::before, .guide::after {
-            content: '';
-            position: absolute;
-            width: 18px; height: 18px;
-            border-color: inherit;
-            border-style: solid;
-        }
-        .guide::before { top: -3px; left: -3px; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
-        .guide::after  { bottom: -3px; right: -3px; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
-
-        /* result overlay */
+        /* ââ Result overlay ââ */
         .result-overlay {
             position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 72%;
-            height: 65%;
-            border-radius: 14px;
+            inset: 0;
             display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: rgba(0,0,0,.72);
-            gap: 6px;
-        }
-
-        .result-overlay.visible { display: flex; }
-
-        .result-icon  { font-size: 52px; line-height: 1; }
-        .result-label { font-size: 18px; font-weight: 800; text-align: center; line-height: 1.2; }
-        .result-label.ok   { color: #22c55e; }
-        .result-label.fail { color: #ef4444; }
-        .result-sub { font-size: 12px; color: #aaa; }
-
-        /* diff badge */
-        .diff-badge {
-            position: absolute;
-            bottom: 10px; right: 12px;
-            background: rgba(0,0,0,.6);
-            color: #aaa;
-            font-size: 11px;
-            padding: 3px 8px;
-            border-radius: 20px;
-            display: none;
-        }
-
-        /* ââ Sensitivity ââ */
-        .sens-row {
-            display: flex;
-            align-items: center;
+            background: rgba(0,0,0,0.78);
             gap: 10px;
-            padding: 10px 16px;
-            background: #161616;
-            border-bottom: 1px solid #222;
         }
+        .result-overlay.show { display: flex; }
+        .res-icon { font-size: 72px; }
+        .res-text { font-size: 26px; font-weight: 800; text-align: center; }
+        .res-text.ok   { color: #22c55e; }
+        .res-text.fail { color: #ef4444; }
+        .res-sub  { font-size: 14px; color: #aaa; text-align: center; }
 
-        .sens-row label { font-size: 12px; color: #777; white-space: nowrap; }
-        .sens-row input { flex: 1; accent-color: #3b82f6; }
-        .sens-val { font-size: 12px; color: #aaa; width: 24px; text-align: right; }
-
-        /* ââ Steps ââ */
-        .steps {
-            flex: 1;
-            padding: 12px;
+        /* ââ Panel ââ */
+        .panel {
+            background: #111;
+            padding: 10px 12px 12px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
+            border-top: 1px solid #1e1e1e;
         }
 
-        .step {
+        .phase-label {
+            font-size: 11px;
+            color: #555;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        /* Status cards */
+        .status-row { display: flex; gap: 8px; }
+
+        .zone-card {
+            flex: 1;
+            background: #1a1a1a;
+            border-radius: 10px;
+            padding: 8px 10px;
+            border: 1px solid #252525;
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 13px 14px;
-            background: #1e1e1e;
-            border-radius: 14px;
-            border: 1px solid #2a2a2a;
-            transition: border-color .3s;
+            gap: 8px;
+            transition: border-color .3s, background .3s;
         }
+        .zone-card.ok   { border-color: #22c55e; background: rgba(34,197,94,0.07); }
+        .zone-card.fail { border-color: #ef4444; background: rgba(239,68,68,0.07); }
 
-        .step.active-step { border-color: #3b82f6; }
-
-        .num {
-            width: 30px; height: 30px;
+        .dot {
+            width: 9px; height: 9px;
             border-radius: 50%;
-            background: #2e2e2e;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 13px;
             flex-shrink: 0;
             transition: background .3s;
         }
+        .d1 { background: #f97316; }
+        .d2 { background: #3b82f6; }
+        .dot.ok   { background: #22c55e; }
+        .dot.fail { background: #ef4444; }
 
-        .num.active { background: #3b82f6; }
-        .num.done   { background: #22c55e; font-size: 15px; }
+        .card-text { font-size: 11px; line-height: 1.3; }
+        .card-title { font-weight: 700; color: #ccc; }
+        .card-state { color: #555; margin-top: 1px; }
+        .card-state.ok   { color: #22c55e; }
+        .card-state.fail { color: #ef4444; }
+        .card-state.cal  { color: #888; }
 
-        .step-info { flex: 1; }
-        .step-title { font-size: 14px; font-weight: 600; }
-        .step-desc  { font-size: 12px; color: #666; margin-top: 2px; }
+        /* Buttons */
+        .actions { display: flex; gap: 8px; }
 
         .btn {
-            padding: 10px 16px;
-            border-radius: 10px;
+            flex: 1;
+            padding: 12px 6px;
+            border-radius: 11px;
             border: none;
             font-size: 13px;
             font-weight: 700;
             cursor: pointer;
-            flex-shrink: 0;
             transition: opacity .2s, transform .1s;
         }
-
         .btn:active { transform: scale(.96); }
-        .btn:disabled { opacity: .35; cursor: not-allowed; }
-        .btn-blue  { background: #3b82f6; color: #fff; }
-        .btn-green { background: #22c55e; color: #fff; }
+        .btn:disabled { opacity: .3; cursor: not-allowed; }
+        .btn-orange { background: #f97316; color: #fff; }
+        .btn-blue   { background: #3b82f6; color: #fff; }
+        .btn-red    { background: #ef4444; color: #fff; }
+        .btn-gray   { background: #2a2a2a; color: #888; }
 
-        .btn-reset {
-            width: 100%;
-            padding: 13px;
-            border-radius: 12px;
-            background: #1e1e1e;
-            color: #666;
-            border: 1px solid #2a2a2a;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
+        /* Sensitivity */
+        .sens-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
+        .sens-row label { font-size: 11px; color: #444; white-space: nowrap; }
+        .sens-row input { flex: 1; accent-color: #3b82f6; height: 3px; }
+        .sens-val { font-size: 11px; color: #555; width: 18px; text-align: right; }
 
-        /* ââ Calibrated flash ââ */
-        @keyframes flash {
-            0%   { opacity: 0; }
-            20%  { opacity: .5; }
-            100% { opacity: 0; }
-        }
-
-        .flash {
-            position: absolute; inset: 0;
-            background: white;
-            pointer-events: none;
-            animation: flash .4s ease-out forwards;
-        }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+        .pulse { animation: pulse 1.2s infinite; }
 
         canvas { display: none; }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>ð¦ Verificador de Embalagem</h1>
-    <p>Detecta itens faltando antes de fechar a caixa</p>
-</header>
-
-<div class="camera-wrap" id="cameraWrap">
+<div class="cam-wrap" id="camWrap">
     <video id="video" autoplay playsinline muted></video>
 
-    <div class="guide" id="guide"></div>
-
-    <div class="result-overlay" id="resultOverlay">
-        <div class="result-icon" id="resIcon"></div>
-        <div class="result-label" id="resLabel"></div>
-        <div class="result-sub"  id="resSub"></div>
+    <div class="zone zone-1" id="zone1" style="left:8%;top:8%;width:36%;height:38%">
+        <div class="zone-label">ZONA 1 â KIT</div>
+        <div class="zone-icon" id="icon1">ð¦</div>
+        <div class="zone-hint">arrastar</div>
     </div>
 
-    <div class="diff-badge" id="diffBadge"></div>
+    <div class="zone zone-2" id="zone2" style="left:56%;top:8%;width:36%;height:38%">
+        <div class="zone-label">ZONA 2 â CAIXA</div>
+        <div class="zone-icon" id="icon2">ð«</div>
+        <div class="zone-hint">arrastar</div>
+    </div>
+
+    <div class="result-overlay" id="resOverlay">
+        <div class="res-icon" id="resIcon"></div>
+        <div class="res-text" id="resText"></div>
+        <div class="res-sub"  id="resSub"></div>
+    </div>
 </div>
 
-<div class="sens-row">
-    <label for="sens">Sensibilidade</label>
-    <input type="range" id="sens" min="1" max="10" value="5">
-    <span class="sens-val" id="sensVal">5</span>
-</div>
+<div class="panel">
+    <div class="phase-label" id="phaseLabel">Posicione as zonas e calibre</div>
 
-<div class="steps">
-    <div class="step active-step" id="s1">
-        <div class="num active" id="n1">1</div>
-        <div class="step-info">
-            <div class="step-title">Calibrar caixa vazia</div>
-            <div class="step-desc">Aponte para a caixa <strong>sem</strong> o kit e clique</div>
+    <div class="status-row">
+        <div class="zone-card" id="card1">
+            <div class="dot d1" id="dot1"></div>
+            <div class="card-text">
+                <div class="card-title">Kit na mesa</div>
+                <div class="card-state" id="state1">Aguardando calibraÃ§Ã£o</div>
+            </div>
         </div>
-        <button class="btn btn-blue" id="btnCal" onclick="calibrate()">Calibrar</button>
+        <div class="zone-card" id="card2">
+            <div class="dot d2" id="dot2"></div>
+            <div class="card-text">
+                <div class="card-title">Kit na caixa</div>
+                <div class="card-state" id="state2">Aguardando calibraÃ§Ã£o</div>
+            </div>
+        </div>
     </div>
 
-    <div class="step" id="s2">
-        <div class="num" id="n2">2</div>
-        <div class="step-info">
-            <div class="step-title">Verificar embalagem</div>
-            <div class="step-desc">Coloque o kit, aponte e clique</div>
-        </div>
-        <button class="btn btn-green" id="btnVer" onclick="verify()" disabled>Verificar</button>
+    <div class="actions" id="actionRow">
+        <button class="btn btn-orange" id="btnCal1" onclick="calibrateZone(1)">Calibrar Zona 1</button>
+        <button class="btn btn-blue"   id="btnCal2" onclick="calibrateZone(2)" disabled>Calibrar Zona 2</button>
     </div>
 
-    <button class="btn-reset" onclick="reset()">âº RecomeÃ§ar</button>
+    <div class="sens-row">
+        <label>Sensibilidade</label>
+        <input type="range" id="sens" min="1" max="10" value="6">
+        <span class="sens-val" id="sensVal">6</span>
+    </div>
 </div>
 
 <canvas id="canvas"></canvas>
 
 <script>
-    const video      = document.getElementById('video');
-    const canvas     = document.getElementById('canvas');
-    const ctx        = canvas.getContext('2d');
-    const guide      = document.getElementById('guide');
-    const overlay    = document.getElementById('resultOverlay');
-    const resIcon    = document.getElementById('resIcon');
-    const resLabel   = document.getElementById('resLabel');
-    const resSub     = document.getElementById('resSub');
-    const diffBadge  = document.getElementById('diffBadge');
-    const sensSlider = document.getElementById('sens');
-    const sensVal    = document.getElementById('sensVal');
+    let ref1 = null, ref2 = null;
+    let z1ok = false, z2ok = false;
+    let timer = null;
+    let phase = 'setup';
 
-    let referenceData = null;
+    const video   = document.getElementById('video');
+    const canvas  = document.getElementById('canvas');
+    const ctx     = canvas.getContext('2d');
+    const wrap    = document.getElementById('camWrap');
+    const sensEl  = document.getElementById('sens');
+    const sensValEl = document.getElementById('sensVal');
 
-    /* ââ Camera ââ */
-    async function startCamera() {
+    sensEl.addEventListener('input', () => sensValEl.textContent = sensEl.value);
+
+    (async () => {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({
+            video.srcObject = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }
             });
-            video.srcObject = stream;
         } catch {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                video.srcObject = stream;
-            } catch {
-                alert('NÃ£o foi possÃ­vel acessar a cÃ¢mera.\nVerifique as permissÃµes do navegador.');
-            }
+            try { video.srcObject = await navigator.mediaDevices.getUserMedia({ video: true }); }
+            catch { alert('CÃ¢mera indisponÃ­vel. Verifique as permissÃµes.'); }
         }
+    })();
+
+    function makeDraggable(el) {
+        let ox = 0, oy = 0;
+        const move = (cx, cy) => {
+            const wr = wrap.getBoundingClientRect();
+            const er = el.getBoundingClientRect();
+            let l = (cx - wr.left - ox) / wr.width * 100;
+            let t = (cy - wr.top  - oy) / wr.height * 100;
+            l = Math.max(0, Math.min(l, 100 - er.width  / wr.width  * 100));
+            t = Math.max(0, Math.min(t, 100 - er.height / wr.height * 100));
+            el.style.left = l + '%';
+            el.style.top  = t + '%';
+        };
+        el.addEventListener('touchstart', e => {
+            if (phase === 'monitoring') return;
+            e.preventDefault();
+            const r = el.getBoundingClientRect();
+            ox = e.touches[0].clientX - r.left;
+            oy = e.touches[0].clientY - r.top;
+        }, { passive: false });
+        el.addEventListener('touchmove', e => {
+            if (phase === 'monitoring') return;
+            e.preventDefault();
+            move(e.touches[0].clientX, e.touches[0].clientY);
+        }, { passive: false });
+        el.addEventListener('mousedown', e => {
+            if (phase === 'monitoring') return;
+            e.preventDefault();
+            ox = e.offsetX; oy = e.offsetY;
+            const mm = ev => move(ev.clientX, ev.clientY);
+            const mu = () => { document.removeEventListener('mousemove', mm); document.removeEventListener('mouseup', mu); };
+            document.addEventListener('mousemove', mm);
+            document.addEventListener('mouseup', mu);
+        });
     }
 
-    sensSlider.addEventListener('input', () => { sensVal.textContent = sensSlider.value; });
+    makeDraggable(document.getElementById('zone1'));
+    makeDraggable(document.getElementById('zone2'));
 
-    /* ââ Frame capture (center crop matching guide box) ââ */
-    function captureFrame() {
-        const vw = video.videoWidth  || 640;
-        const vh = video.videoHeight || 480;
-        canvas.width  = vw;
-        canvas.height = vh;
-        ctx.drawImage(video, 0, 0, vw, vh);
-
-        // Match guide dimensions: 72% wide, 65% tall, centered
-        const x = Math.floor(vw * 0.14);
-        const y = Math.floor(vh * 0.175);
-        const w = Math.floor(vw * 0.72);
-        const h = Math.floor(vh * 0.65);
+    function capture(zoneEl) {
+        const wr = wrap.getBoundingClientRect();
+        const zr = zoneEl.getBoundingClientRect();
+        canvas.width  = wr.width;
+        canvas.height = wr.height;
+        ctx.drawImage(video, 0, 0, wr.width, wr.height);
+        const x = Math.max(0, zr.left - wr.left);
+        const y = Math.max(0, zr.top  - wr.top);
+        const w = Math.min(zr.width,  wr.width  - x);
+        const h = Math.min(zr.height, wr.height - y);
         return ctx.getImageData(x, y, w, h);
     }
 
-    /* ââ Pixel diff (% of pixels that changed significantly) ââ */
-    function pixelDiff(a, b) {
+    function diff(a, b) {
         const d1 = a.data, d2 = b.data;
         const len = Math.min(d1.length, d2.length);
         let changed = 0, total = 0;
         for (let i = 0; i < len; i += 4) {
-            const dr = Math.abs(d1[i]   - d2[i]);
-            const dg = Math.abs(d1[i+1] - d2[i+1]);
-            const db = Math.abs(d1[i+2] - d2[i+2]);
-            if ((dr + dg + db) / 3 > 18) changed++;
+            if ((Math.abs(d1[i]-d2[i]) + Math.abs(d1[i+1]-d2[i+1]) + Math.abs(d1[i+2]-d2[i+2])) / 3 > 20)
+                changed++;
             total++;
         }
         return (changed / total) * 100;
     }
 
-    /* ââ Flash effect ââ */
-    function flashScreen() {
-        const f = document.createElement('div');
-        f.className = 'flash';
-        document.getElementById('cameraWrap').appendChild(f);
-        setTimeout(() => f.remove(), 450);
+    function threshold() {
+        return 8 - (parseInt(sensEl.value) - 1) * 0.72;
     }
 
-    /* ââ Step 1: Calibrate ââ */
-    function calibrate() {
-        referenceData = captureFrame();
-        flashScreen();
-
-        document.getElementById('n1').className = 'num done';
-        document.getElementById('n1').textContent = 'â';
-        document.getElementById('s1').className = 'step';
-        document.getElementById('n2').className = 'num active';
-        document.getElementById('s2').className = 'step active-step';
-        document.getElementById('btnCal').disabled = true;
-        document.getElementById('btnVer').disabled = false;
-
-        overlay.className = 'result-overlay';
-        guide.className = 'guide';
-    }
-
-    /* ââ Step 2: Verify ââ */
-    function verify() {
-        if (!referenceData) return;
-
-        const current = captureFrame();
-        const diff    = pixelDiff(referenceData, current);
-
-        // Sensitivity 1 â threshold 8% (hard to trigger)
-        // Sensitivity 10 â threshold 1.5% (easy to trigger)
-        const s   = parseInt(sensSlider.value);
-        const thr = 8 - (s - 1) * 0.72;   // 8% â ~1.5%
-
-        const present = diff > thr;
-
-        diffBadge.style.display = 'block';
-        diffBadge.textContent   = `Î ${diff.toFixed(1)}%  (limite: ${thr.toFixed(1)}%)`;
-
-        if (present) {
-            guide.className           = 'guide ok';
-            overlay.className         = 'result-overlay visible';
-            resIcon.textContent       = 'â';
-            resLabel.className        = 'result-label ok';
-            resLabel.textContent      = 'KIT PRESENTE';
-            resSub.textContent        = 'Embalagem aprovada';
-            if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+    function calibrateZone(n) {
+        const el = document.getElementById('zone' + n);
+        if (n === 1) {
+            ref1 = capture(el);
+            z1ok = false;
+            setState(1, 'cal', 'Calibrado â aguardando');
+            document.getElementById('btnCal1').disabled = true;
+            document.getElementById('btnCal2').disabled = false;
+            setPhase('Agora calibre a Zona 2 (caixa com peÃ§as, sem kit)');
         } else {
-            guide.className           = 'guide fail';
-            overlay.className         = 'result-overlay visible';
-            resIcon.textContent       = 'ð¨';
-            resLabel.className        = 'result-label fail';
-            resLabel.textContent      = 'KIT AUSENTE!';
-            resSub.textContent        = 'Verifique a embalagem';
-            if (navigator.vibrate) navigator.vibrate([600]);
+            ref2 = capture(el);
+            z2ok = false;
+            setState(2, 'cal', 'Calibrado â aguardando');
+            startMonitoring();
+        }
+        if (navigator.vibrate) navigator.vibrate([60, 30, 60]);
+    }
+
+    function startMonitoring() {
+        phase = 'monitoring';
+        setPhase('ð£ Monitorando automaticamente...');
+        document.getElementById('actionRow').innerHTML =
+            `<button class="btn btn-red"  onclick="stopAndCheck()">Fechar caixa agora</button>
+             <button class="btn btn-gray" onclick="resetAll()">âº Reiniciar</button>`;
+        document.getElementById('zone1').querySelector('.zone-hint').textContent = '';
+        document.getElementById('zone2').querySelector('.zone-hint').textContent = '';
+        timer = setInterval(check, 900);
+    }
+
+    function check() {
+        const thr = threshold();
+        if (ref1 && !z1ok) {
+            if (diff(ref1, capture(document.getElementById('zone1'))) > thr) {
+                z1ok = true; setZone(1, 'ok'); setState(1, 'ok', 'â Kit pegou'); vib([80]);
+            }
+        }
+        if (ref2 && !z2ok) {
+            if (diff(ref2, capture(document.getElementById('zone2'))) > thr) {
+                z2ok = true; setZone(2, 'ok'); setState(2, 'ok', 'â Kit colocou'); vib([80]);
+            }
+        }
+        if (z1ok && z2ok) { clearInterval(timer); showResult(true); }
+    }
+
+    function stopAndCheck() {
+        clearInterval(timer);
+        if (!z'lok) {
+            if (!z1ok) { setZone(1, 'fail'); setState(1, 'fail', 'Kit ainda na mesa'); }
+            setZone(2, 'fail'); setState(2, 'fail', 'â Kit nÃ£o colocado');
+            showResult(false);
+        } else { showResult(true); }
+    }
+
+    function showResult(ok) {
+        const ov = document.getElementById('resOverlay');
+        ov.className = 'result-overlay show';
+        document.getElementById('resIcon').textContent = ok ? 'â' : 'ð¨';
+        const rt = document.getElementById('resText');
+        rt.className = 'res-text ' + (ok ? 'ok' : 'fail');
+        rt.textContent = ok ? 'EMBALAGEM OK' : 'KIT AUSENTE!';
+        const rs = document.getElementById('resSub');
+        if (ok) {
+            rs.textContent = 'Kit detectado na caixa';
+            vib([100, 50, 100]);
+            setTimeout(() => { ov.className = 'result-overlay'; resetForNext(); }, 2500);
+        } else {
+            rs.innerHTML = 'Verifique antes de fechar a caixa<br>'
+                + '<button onclick="resetForNext()" style="margin-top:14px;padding:10px 28px;border-radius:10px;background:#222;color:white;border:1px solid #444;font-size:14px;font-weight:700">Corrigir</button>';
+            vib([600]);
         }
     }
 
-    /* ââ Reset ââ */
-    function reset() {
-        referenceData = null;
-
-        document.getElementById('n1').className = 'num active';
-        document.getElementById('n1').textContent = '1';
-        document.getElementById('n2').className = 'num';
-        document.getElementById('n2').textContent = '2';
-        document.getElementById('s1').className = 'step active-step';
-        document.getElementById('s2').className = 'step';
-        document.getElementById('btnCal').disabled = false;
-        document.getElementById('btnVer').disabled = true;
-
-        overlay.className = 'result-overlay';
-        guide.className   = 'guide';
-        diffBadge.style.display = 'none';
+    function resetForNext() {
+        document.getElementById('resOverlay').className = 'result-overlay';
+        z1ok = false; z2ok = false;
+        setZone(1, ''); setZone(2, '');
+        setState(1, 'cal', 'Aguardando...');
+        setState(2, 'cal', 'Aguardando...');
+        document.getElementById('icon1').textContent = 'ð¦', document.getElementById('icon2').textContent = 'ð«';
+        setPhase('ð£ Monitorando â prÃ³xima embalagem');
+        timer = setInterval(check, 900);
     }
 
-    startCamera();
+    function resetAll() {
+        clearInterval(timer);
+        ref1 = ref2 = null; z1ok = z2ok = false; phase = 'setup';
+        document.getElementById('resOverlay').className = 'result-overlay';
+        setZone(1, ''); setZone(2, '');
+        setState(1, '', 'Aguardando calibraÃ§Ã£o');
+        setState(2, '', 'Aguardando calibraÃ§Ã£o');
+        document.getElementById('icon1').textContent = 'ð¦';
+        document.getElementById('icon2').textContent = 'ð«';
+        document.getElementById('zone1').querySelector('.zone-hint').textContent = 'arrastar';
+        document.getElementById('zone2').querySelector('.zone-hint').textContent = 'arrastar';
+        document.getElementById('actionRow').innerHTML =
+            `<button class="btn btn-orange" id="btnCal1" onclick="calibrateZone(1)">Calibrar Zona 1</button>
+             <button class="btn btn-blue"   id="btnCal2" onclick="calibrateZone(2)" disabled>Calibrar Zona 2</button>`;
+        setPhase('Posicione as zonas e calibre');
+    }
+
+    function setZone(n, state) {
+        const z = document.getElementById('zone' + n);
+        z.className = 'zone zone-' + n + (state ? ' ' + state : '');
+        const icon = document.getElementById('icon' + n);
+        if (state === 'ok') icon.textContent = 'â';
+        else if (state === 'fail') icon.textContent = 'ð¨';
+        else icon.textContent = n === 1 ? 'ð¦' : 'ð«';
+    }
+
+    function setState(n, cls, text) {
+        document.getElementById('dot' + n).className = 'dot ' + (cls === 'ok' ? 'ok' : cls === 'fail' ? 'fail' : 'd' + n);
+        document.getElementById('card' + n).className = 'zone-card' + (cls === 'ok' ? ' ok' : cls === 'fail' ? ' fail' : '');
+        const s = document.getElementById('state' + n);
+        s.className = 'card-state' + (cls ? ' ' + cls : '');
+        s.textContent = text;
+    }
+
+    function setPhase(t) { document.getElementById('phaseLabel').textContent = t; }
+    function vib(p) { if (navigator.vibrate) navigator.vibrate(p); }
 </script>
 </body>
 </html>
