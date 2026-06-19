@@ -7,53 +7,66 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 body{background:#111;color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;height:100dvh;display:flex;flex-direction:column;overflow:hidden;}
-#startScreen{position:fixed;inset:0;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;z-index:100;padding:32px;}
-#startScreen h1{font-size:22px;font-weight:700;text-align:center;color:#fff;}
-#startScreen p{font-size:14px;color:#aaa;text-align:center;max-width:280px;}
+#startScreen{position:fixed;inset:0;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:100;padding:32px;}
+#startScreen h1{font-size:21px;font-weight:700;text-align:center;}
+#startScreen p{font-size:13px;color:#aaa;text-align:center;max-width:280px;line-height:1.5;}
 .start-btn{background:#2a7af5;color:#fff;border:none;border-radius:14px;padding:16px 40px;font-size:17px;font-weight:700;cursor:pointer;width:100%;max-width:280px;}
-#errScreen{position:fixed;inset:0;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:100;padding:32px;display:none;}
+#errScreen{position:fixed;inset:0;background:#111;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:100;padding:32px;display:none;}
 #errScreen p{font-size:15px;color:#f55;text-align:center;}
 .retry-btn{background:#333;color:#fff;border:none;border-radius:10px;padding:12px 28px;font-size:15px;cursor:pointer;}
-#header{background:#1a1a1a;padding:8px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0;}
-#phaseLabel{font-size:12px;color:#aaa;flex:1;}
-#sensWrap{display:flex;align-items:center;gap:6px;font-size:12px;color:#888;}
-#sensV{font-size:12px;color:#aaa;}
-input[type=range]{width:70px;height:4px;accent-color:#2a7af5;}
-#cards{display:flex;gap:8px;padding:8px;flex-shrink:0;}
-.zone-card{flex:1;background:#1e1e1e;border-radius:10px;padding:10px;border:1px solid #333;transition:border-color .3s;}
+#header{background:#1a1a1a;padding:7px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0;}
+#phaseLabel{font-size:11px;color:#aaa;flex:1;line-height:1.3;}
+#sensWrap{display:flex;align-items:center;gap:5px;font-size:11px;color:#888;flex-shrink:0;}
+input[type=range]{width:60px;height:4px;accent-color:#2a7af5;}
+#cards{display:flex;gap:8px;padding:7px 8px;flex-shrink:0;}
+.zone-card{flex:1;background:#1e1e1e;border-radius:10px;padding:8px 10px;border:1px solid #333;transition:border-color .3s;}
 .zone-card.ok{border-color:#2a7;}
 .zone-card.fail{border-color:#f55;}
-.card-top{display:flex;align-items:center;gap:8px;}
-.dot{width:10px;height:10px;border-radius:50%;background:#444;flex-shrink:0;transition:background .3s;}
+.zone-card.cal{border-color:#2a7af5;}
+.zone-card.moving{border-color:#fa0;}
+.card-top{display:flex;align-items:center;gap:7px;}
+.dot{width:9px;height:9px;border-radius:50%;background:#444;flex-shrink:0;transition:background .3s;}
 .dot.ok{background:#2a7;}
 .dot.fail{background:#f55;}
-.dot.d1{background:#555;}
-.dot.d2{background:#555;}
-.card-title{font-size:13px;font-weight:600;}
-.card-state{font-size:11px;color:#888;margin-top:4px;}
+.dot.cal{background:#2a7af5;}
+.dot.moving{background:#fa0;}
+.dot.d1,.dot.d2{background:#555;}
+.card-title{font-size:12px;font-weight:600;}
+.card-state{font-size:10px;color:#888;margin-top:3px;}
 .card-state.ok{color:#2a7;}
 .card-state.fail{color:#f55;}
-.card-state.cal{color:#fa0;}
+.card-state.cal{color:#2a7af5;}
+.card-state.moving{color:#fa0;}
+.conf-bar{height:3px;background:#2a2a2a;border-radius:2px;margin-top:5px;overflow:hidden;}
+.conf-fill{height:100%;background:#2a7af5;width:0%;transition:width .4s;}
+.conf-fill.ok{background:#2a7;}
+.conf-fill.fail{background:#f55;}
+.conf-fill.moving{background:#fa0;}
 #camWrap{flex:1;position:relative;overflow:hidden;background:#000;}
 video{width:100%;height:100%;object-fit:cover;}
-.zone{position:absolute;border:2px dashed rgba(255,255,255,0.6);border-radius:6px;background:rgba(255,255,255,0.05);touch-action:none;cursor:move;min-width:60px;min-height:50px;}
-.zone.ok{border:2px solid #2a7;background:rgba(40,170,100,0.15);}
-.zone.fail{border:2px solid #f55;background:rgba(255,85,85,0.15);}
-.zone-icon{position:absolute;top:4px;left:50%;transform:translateX(-50%);font-size:18px;pointer-events:none;}
-.zone-hint{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);font-size:10px;color:rgba(255,255,255,0.5);pointer-events:none;white-space:nowrap;}
-.rh{position:absolute;width:22px;height:22px;z-index:10;touch-action:none;cursor:nwse-resize;}
+.zone{position:absolute;border:2px dashed rgba(255,255,255,0.55);border-radius:6px;background:rgba(255,255,255,0.04);touch-action:none;cursor:move;min-width:60px;min-height:50px;}
+.zone.ok{border:2px solid #2a7;background:rgba(40,170,100,0.13);}
+.zone.fail{border:2px solid #f55;background:rgba(255,85,85,0.13);}
+.zone.cal{border:2px solid #2a7af5;background:rgba(42,122,245,0.10);}
+.zone.moving{border:2px solid #fa0;background:rgba(255,160,0,0.10);}
+.zone-icon{position:absolute;top:3px;left:50%;transform:translateX(-50%);font-size:16px;pointer-events:none;user-select:none;}
+.zone-label{position:absolute;top:3px;right:5px;font-size:9px;color:rgba(255,255,255,0.4);pointer-events:none;}
+.zone-conf{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:700;color:#fff;background:rgba(0,0,0,0.5);padding:1px 6px;border-radius:8px;pointer-events:none;white-space:nowrap;}
+.zone-hint{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(255,255,255,0.4);pointer-events:none;white-space:nowrap;}
+.rh{position:absolute;width:22px;height:22px;z-index:10;touch-action:none;}
 .rh-tl{top:-4px;left:-4px;cursor:nw-resize;}
 .rh-tr{top:-4px;right:-4px;cursor:ne-resize;}
 .rh-bl{bottom:-4px;left:-4px;cursor:sw-resize;}
 .rh-br{bottom:-4px;right:-4px;cursor:se-resize;}
-#actionRow{padding:8px;display:flex;gap:8px;flex-shrink:0;}
-.btn{flex:1;padding:12px 8px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;color:#fff;}
-.btn-orange{background:#e07000;}
+#actionRow{padding:7px 8px;display:flex;gap:8px;flex-shrink:0;}
+.btn{flex:1;padding:11px 6px;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;color:#fff;min-width:70px;}
+.btn-orange{background:#d06800;}
 .btn-blue{background:#2a7af5;}
+.btn-green{background:#1a9;}
 .btn-red{background:#c0392b;}
 .btn-gray{background:#444;}
-.btn:disabled{opacity:0.4;cursor:default;}
-.result-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:200;opacity:0;pointer-events:none;transition:opacity .3s;}
+.btn:disabled{opacity:0.35;cursor:default;}
+.result-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:200;opacity:0;pointer-events:none;transition:opacity .3s;}
 .result-overlay.show{opacity:1;pointer-events:all;}
 .res-icon{font-size:72px;}
 .res-text{font-size:32px;font-weight:900;}
@@ -65,20 +78,20 @@ video{width:100%;height:100%;object-fit:cover;}
 <body>
 
 <div id="startScreen">
-  <div style="font-size:48px">&#128247;</div>
+  <div style="font-size:46px">&#128247;</div>
   <h1>Verificador de Embalagem</h1>
-  <p>Posicione as zonas sobre a esteira e calibre para iniciar o monitoramento</p>
-  <button class="start-btn" onclick="startCamera()">Iniciar cÃ¢mera</button>
+  <p>Detec&#231;&#227;o inteligente: aprende o kit e monitora se foi colocado na caixa</p>
+  <button class="start-btn" onclick="startCamera()">Iniciar c&#226;mera</button>
 </div>
 
 <div id="errScreen">
-  <div style="font-size:40px">&#9888;</div>
-  <p id="errMsg">CÃ¢mera nÃ£o disponÃ­vel</p>
+  <div style="font-size:38px">&#9888;</div>
+  <p id="errMsg">C&#226;mera n&#227;o dispon&#237;vel</p>
   <button class="retry-btn" onclick="retryCamera()">Tentar novamente</button>
 </div>
 
 <div id="header">
-  <span id="phaseLabel">Aguardando cÃ¢mera...</span>
+  <span id="phaseLabel">Aguardando c&#226;mera...</span>
   <div id="sensWrap">
     <span>Sens</span>
     <input type="range" id="sens" min="1" max="10" value="5">
@@ -90,16 +103,18 @@ video{width:100%;height:100%;object-fit:cover;}
   <div class="zone-card" id="card1">
     <div class="card-top">
       <div class="dot d1" id="dot1"></div>
-      <span class="card-title">Zona 1</span>
+      <span class="card-title">Zona 1 &middot; Kit</span>
     </div>
-    <div class="card-state" id="state1">Aguardando calibraÃ§Ã£o</div>
+    <div class="card-state" id="state1">Aguardando calibra&#231;&#227;o</div>
+    <div class="conf-bar"><div class="conf-fill" id="conf1"></div></div>
   </div>
   <div class="zone-card" id="card2">
     <div class="card-top">
       <div class="dot d2" id="dot2"></div>
-      <span class="card-title">Zona 2</span>
+      <span class="card-title">Zona 2 &middot; Caixa</span>
     </div>
-    <div class="card-state" id="state2">Aguardando calibraÃ§Ã£o</div>
+    <div class="card-state" id="state2">Aguardando calibra&#231;&#227;o</div>
+    <div class="conf-bar"><div class="conf-fill" id="conf2"></div></div>
   </div>
 </div>
 
@@ -107,6 +122,8 @@ video{width:100%;height:100%;object-fit:cover;}
   <video id="video" autoplay playsinline muted></video>
   <div class="zone" id="zone1" style="left:5%;top:20%;width:40%;height:55%">
     <div class="zone-icon" id="icon1">&#128294;</div>
+    <div class="zone-label">Z1</div>
+    <div class="zone-conf" id="zconf1"></div>
     <div class="zone-hint" id="hint1">arrastar</div>
     <div class="rh rh-tl" data-corner="tl"></div>
     <div class="rh rh-tr" data-corner="tr"></div>
@@ -114,7 +131,9 @@ video{width:100%;height:100%;object-fit:cover;}
     <div class="rh rh-br" data-corner="br"></div>
   </div>
   <div class="zone" id="zone2" style="left:55%;top:20%;width:40%;height:55%">
-    <div class="zone-icon" id="icon2">&#128363;</div>
+    <div class="zone-icon" id="icon2">&#128230;</div>
+    <div class="zone-label">Z2</div>
+    <div class="zone-conf" id="zconf2"></div>
     <div class="zone-hint" id="hint2">arrastar</div>
     <div class="rh rh-tl" data-corner="tl"></div>
     <div class="rh rh-tr" data-corner="tr"></div>
@@ -131,17 +150,26 @@ video{width:100%;height:100%;object-fit:cover;}
   <div class="res-sub" id="resSub"></div>
 </div>
 
-<canvas id="canvas"></canvas>
-
 <script>
 (function() {
-  var ref1 = null, ref2 = null, z1ok = false, z2ok = false;
-  var timer = null, phase = 'setup';
   var video = document.getElementById('video');
-  var canvas = document.getElementById('canvas');
-  var ctx = canvas.getContext('2d');
   var wrap = document.getElementById('camWrap');
   var sensEl = document.getElementById('sens');
+
+  var nc = document.createElement('canvas');
+  nc.width = 64; nc.height = 64;
+  var nctx = nc.getContext('2d');
+
+  var ref1Kit = null;
+  var ref1Empty = null;
+  var ref2Empty = null;
+  var phase = 'setup';
+  var z1HasKit = null;
+  var z2HasKit = false;
+  var kitPickedUp = false;
+  var timer = null;
+  var consGone = 0;
+  var consArrived = 0;
 
   sensEl.addEventListener('input', function() {
     document.getElementById('sensV').textContent = sensEl.value;
@@ -149,24 +177,22 @@ video{width:100%;height:100%;object-fit:cover;}
 
   function startCamera() {
     document.getElementById('startScreen').style.display = 'none';
-    var opts = { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }, audio: false };
-    navigator.mediaDevices.getUserMedia(opts).then(function(stream) {
+    navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } },
+      audio: false
+    }).then(function(stream) {
       video.srcObject = stream;
       video.play();
-      setPhase('Posicione as zonas e calibre');
+      setPhase('Posicione as zonas e toque Calibrar');
       makeDraggable(document.getElementById('zone1'));
       makeDraggable(document.getElementById('zone2'));
       makeResizable(document.getElementById('zone1'));
       makeResizable(document.getElementById('zone2'));
-      setActionRow('calibrate');
+      setActionRow('position');
     }).catch(function(err) {
-      showCameraError(err.message || 'Erro ao acessar cÃ¢mera');
+      document.getElementById('errMsg').textContent = err.message || 'Erro ao acessar camera';
+      document.getElementById('errScreen').style.display = 'flex';
     });
-  }
-
-  function showCameraError(msg) {
-    document.getElementById('errMsg').textContent = msg || 'CÃ¢mera nÃ£o disponÃ­vel';
-    document.getElementById('errScreen').style.display = 'flex';
   }
 
   function retryCamera() {
@@ -174,78 +200,313 @@ video{width:100%;height:100%;object-fit:cover;}
     document.getElementById('startScreen').style.display = 'flex';
   }
 
+  function captureNorm(zoneEl) {
+    var wr = wrap.getBoundingClientRect();
+    var zr = zoneEl.getBoundingClientRect();
+    var sw = Math.round((zr.width / wr.width) * video.videoWidth);
+    var sh = Math.round((zr.height / wr.height) * video.videoHeight);
+    var sx = Math.round(((zr.left - wr.left) / wr.width) * video.videoWidth);
+    var sy = Math.round(((zr.top - wr.top) / wr.height) * video.videoHeight);
+    if (sw < 1 || sh < 1) return null;
+    nctx.drawImage(video, sx, sy, sw, sh, 0, 0, 64, 64);
+    return nctx.getImageData(0, 0, 64, 64);
+  }
+
+  function imageSim(a, b) {
+    if (!a || !b) return 0;
+    var diff = 0, len = a.data.length;
+    for (var i = 0; i < len; i += 4) {
+      diff += Math.abs(a.data[i]   - b.data[i]);
+      diff += Math.abs(a.data[i+1] - b.data[i+1]);
+      diff += Math.abs(a.data[i+2] - b.data[i+2]);
+    }
+    return 1 - diff / ((len / 4) * 255 * 3);
+  }
+
+  function pixelDiff(a, b) {
+    if (!a || !b || a.data.length !== b.data.length) return 0;
+    var diff = 0, len = a.data.length;
+    for (var i = 0; i < len; i += 4) {
+      diff += Math.abs(a.data[i]   - b.data[i]);
+      diff += Math.abs(a.data[i+1] - b.data[i+1]);
+      diff += Math.abs(a.data[i+2] - b.data[i+2]);
+    }
+    return diff / (len / 4);
+  }
+
+  function threshold() {
+    return 8 - (parseInt(sensEl.value) - 1) * 0.72;
+  }
+
+  function goCalibrate() {
+    setPhase('Passo 1: Retire o kit â deixe mesa e caixa VAZIAS');
+    setActionRow('step1');
+  }
+
+  function captureEmpty() {
+    var z1 = document.getElementById('zone1');
+    var z2 = document.getElementById('zone2');
+    ref1Empty = captureNorm(z1);
+    ref2Empty = captureNorm(z2);
+    setZone(1, 'cal'); setState(1, 'cal', 'Mesa vazia aprendida â');
+    setZone(2, 'cal'); setState(2, 'cal', 'Caixa vazia aprendida â');
+    document.getElementById('icon1').textContent = 'â';
+    document.getElementById('icon2').textContent = 'â';
+    setPhase('Passo 2: Coloque o KIT na Zona 1 e toque Aprender Kit');
+    setActionRow('step2');
+  }
+
+  function captureKit() {
+    var z1 = document.getElementById('zone1');
+    ref1Kit = captureNorm(z1);
+    setZone(1, 'ok'); setState(1, 'ok', 'Kit aprendido â');
+    document.getElementById('icon1').textContent = 'â­';
+    setPhase('Pronto! Toque Iniciar para comeÃ§ar');
+    setActionRow('ready');
+  }
+
+  function startMonitoring() {
+    phase = 'monitoring';
+    z1HasKit = true; z2HasKit = false;
+    kitPickedUp = false; consGone = 0; consArrived = 0;
+    document.getElementById('hint1').textContent = '';
+    document.getElementById('hint2').textContent = '';
+    setPhase('Monitorando...');
+    setZone(1, 'ok'); setState(1, 'ok', 'Kit presente');
+    setZone(2, '');   setState(2, '', 'Aguardando kit...');
+    document.getElementById('icon1').textContent = 'â­';
+    document.getElementById('icon2').textContent = '\u{1F4E6}';
+    setActionRow('monitoring');
+    timer = window.setInterval(check, 900);
+  }
+
+  function check() {
+    var z1El = document.getElementById('zone1');
+    var z2El = document.getElementById('zone2');
+
+    if (ref1Kit && ref1Empty) {
+      var cur1 = captureNorm(z1El);
+      if (cur1) {
+        var simKit   = imageSim(cur1, ref1Kit);
+        var simEmpty = imageSim(cur1, ref1Empty);
+        var total = simKit + simEmpty;
+        var kitConf = total > 0 ? Math.round((simKit / total) * 100) : 50;
+        var kitPresent = kitConf >= 50;
+
+        var cf1 = document.getElementById('conf1');
+        cf1.style.width = kitConf + '%';
+        cf1.className = 'conf-fill ' + (kitConf > 55 ? 'ok' : kitConf < 45 ? 'fail' : '');
+        document.getElementById('zconf1').textContent = kitPresent
+          ? 'KIT ' + kitConf + '%'
+          : 'VAZIO ' + (100 - kitConf) + '%';
+
+        if (z1HasKit && !kitPresent) {
+          consGone++;
+          if (consGone >= 2) {
+            z1HasKit = false; consGone = 0; kitPickedUp = true;
+            setZone(1, 'moving'); setState(1, 'moving', 'Kit em movimento...');
+            document.getElementById('icon1').textContent = 'â¬';
+            document.getElementById('card1').className = 'zone-card moving';
+            vib([80]);
+          }
+        } else if (z1HasKit) {
+          consGone = 0;
+        }
+      }
+    }
+
+    if (ref2Empty) {
+      var cur2 = captureNorm(z2El);
+      if (cur2) {
+        var diff2 = pixelDiff(cur2, ref2Empty);
+        var thr = threshold();
+        var kitInBox = diff2 > thr;
+        var conf2 = Math.min(100, Math.round((diff2 / (thr * 2)) * 100));
+
+        var cf2 = document.getElementById('conf2');
+        cf2.style.width = conf2 + '%';
+        cf2.className = 'conf-fill ' + (kitInBox ? 'ok' : '');
+        document.getElementById('zconf2').textContent = kitInBox ? 'KIT NA CAIXA' : '';
+
+        if (!z2HasKit && kitInBox) {
+          consArrived++;
+          if (consArrived >= 2) {
+            z2HasKit = true; consArrived = 0;
+            setZone(2, 'ok'); setState(2, 'ok', 'Kit na caixa â');
+            document.getElementById('icon2').textContent = 'â';
+            vib([80]);
+            if (kitPickedUp || !z1HasKit) {
+              window.clearInterval(timer);
+              showResult(true);
+            }
+          }
+        } else if (!kitInBox) {
+          consArrived = 0;
+        }
+      }
+    }
+  }
+
+  function stopAndCheck() {
+    window.clearInterval(timer);
+    if (!z2HasKit) {
+      if (!z1HasKit) { setZone(1, 'fail'); setState(1, 'fail', 'Kit ausente da mesa'); }
+      setZone(2, 'fail'); setState(2, 'fail', 'Kit nÃ£o colocado!');
+      showResult(false);
+    } else {
+      showResult(true);
+    }
+  }
+
+  function showResult(ok) {
+    var ov = document.getElementById('resOverlay');
+    ov.className = 'result-overlay show';
+    document.getElementById('resIcon').textContent = ok ? 'â' : 'â';
+    var rt = document.getElementById('resText');
+    rt.className = 'res-text ' + (ok ? 'ok' : 'fail');
+    rt.textContent = ok ? 'EMBALAGEM OK' : 'KIT AUSENTE!';
+    var rs = document.getElementById('resSub');
+    if (ok) {
+      rs.textContent = 'Kit detectado na caixa';
+      vib([100, 50, 100]);
+      window.setTimeout(function() {
+        ov.className = 'result-overlay';
+        resetForNext();
+      }, 2500);
+    } else {
+      rs.innerHTML = 'Verifique antes de fechar<br><button onclick="window._app.resetForNext()" style="margin-top:14px;padding:10px 28px;border-radius:10px;background:#222;color:white;border:1px solid #444;font-size:14px;font-weight:700">Corrigir</button>';
+      vib([600]);
+    }
+  }
+
+  function resetForNext() {
+    document.getElementById('resOverlay').className = 'result-overlay';
+    z1HasKit = true; z2HasKit = false;
+    kitPickedUp = false; consGone = 0; consArrived = 0;
+    setZone(1, 'ok'); setState(1, 'ok', 'Kit presente');
+    setZone(2, '');   setState(2, '', 'Aguardando kit...');
+    document.getElementById('icon1').textContent = 'â­';
+    document.getElementById('icon2').textContent = '\u{1F4E6}';
+    document.getElementById('zconf1').textContent = '';
+    document.getElementById('zconf2').textContent = '';
+    document.getElementById('conf1').style.width = '0%';
+    document.getElementById('conf2').style.width = '0%';
+    setPhase('Monitorando â prÃ³xima embalagem');
+    timer = window.setInterval(check, 900);
+  }
+
+  function resetAll() {
+    window.clearInterval(timer);
+    ref1Kit = null; ref1Empty = null; ref2Empty = null;
+    phase = 'setup'; z1HasKit = null; z2HasKit = false;
+    kitPickedUp = false; consGone = 0; consArrived = 0;
+    document.getElementById('resOverlay').className = 'result-overlay';
+    setZone(1, ''); setZone(2, '');
+    setState(1, '', 'Aguardando calibraÃ§Ã£o');
+    setState(2, '', 'Aguardando calibraÃ§Ã£o');
+    document.getElementById('icon1').textContent = '\u{1F526}';
+    document.getElementById('icon2').textContent = '\u{1F4E6}';
+    document.getElementById('zconf1').textContent = '';
+    document.getElementById('zconf2').textContent = '';
+    document.getElementById('conf1').style.width = '0%';
+    document.getElementById('conf2').style.width = '0%';
+    document.getElementById('hint1').textContent = 'arrastar';
+    document.getElementById('hint2').textContent = 'arrastar';
+    setPhase('Posicione as zonas e toque Calibrar');
+    setActionRow('position');
+  }
+
+  function setActionRow(mode) {
+    var row = document.getElementById('actionRow');
+    if (mode === 'position') {
+      row.innerHTML = '<button class="btn btn-blue" onclick="window._app.goCalibrate()">Calibrar â</button>';
+    } else if (mode === 'step1') {
+      row.innerHTML = '<button class="btn btn-orange" onclick="window._app.captureEmpty()">\u{1F4F8} Capturar vazio</button><button class="btn btn-gray" onclick="window._app.resetAll()">Voltar</button>';
+    } else if (mode === 'step2') {
+      row.innerHTML = '<button class="btn btn-orange" onclick="window._app.captureKit()">\u{1F4F8} Aprender Kit</button><button class="btn btn-gray" onclick="window._app.resetAll()">Reiniciar</button>';
+    } else if (mode === 'ready') {
+      row.innerHTML = '<button class="btn btn-green" onclick="window._app.startMonitoring()">â¶ Iniciar</button><button class="btn btn-gray" onclick="window._app.resetAll()">Reiniciar</button>';
+    } else if (mode === 'monitoring') {
+      row.innerHTML = '<button class="btn btn-red" onclick="window._app.stopAndCheck()">Fechar caixa</button><button class="btn btn-gray" onclick="window._app.resetAll()">Reiniciar</button>';
+    }
+  }
+
+  function setZone(n, state) {
+    document.getElementById('zone' + n).className = 'zone' + (state ? ' ' + state : '');
+  }
+
+  function setState(n, cls, text) {
+    var valid = { ok:1, fail:1, cal:1, moving:1 };
+    var dotCls = valid[cls] ? cls : 'd' + n;
+    document.getElementById('dot' + n).className = 'dot ' + dotCls;
+    document.getElementById('card' + n).className = 'zone-card' + (valid[cls] ? ' ' + cls : '');
+    var s = document.getElementById('state' + n);
+    s.className = 'card-state' + (cls ? ' ' + cls : '');
+    s.textContent = text;
+  }
+
+  function setPhase(t) { document.getElementById('phaseLabel').textContent = t; }
+  function vib(p) { if (navigator.vibrate) navigator.vibrate(p); }
+
   function makeDraggable(el) {
     var startX, startY, origL, origT;
     function moveStart(cx, cy) {
-      var er = el.getBoundingClientRect();
-      var wr = wrap.getBoundingClientRect();
+      var er = el.getBoundingClientRect(), wr = wrap.getBoundingClientRect();
       startX = cx; startY = cy;
-      origL = er.left - wr.left;
-      origT = er.top - wr.top;
+      origL = er.left - wr.left; origT = er.top - wr.top;
     }
     function moveTo(cx, cy) {
       var wr = wrap.getBoundingClientRect();
       var dx = cx - startX, dy = cy - startY;
-      var nl = Math.max(0, Math.min(wr.width - el.offsetWidth, origL + dx));
+      var nl = Math.max(0, Math.min(wr.width  - el.offsetWidth,  origL + dx));
       var nt = Math.max(0, Math.min(wr.height - el.offsetHeight, origT + dy));
-      el.style.left = (nl / wr.width * 100) + '%';
-      el.style.top = (nt / wr.height * 100) + '%';
+      el.style.left = (nl / wr.width  * 100) + '%';
+      el.style.top  = (nt / wr.height * 100) + '%';
     }
     el.addEventListener('touchstart', function(e) {
       if (phase === 'monitoring') return;
       if (e.target.classList.contains('rh')) return;
-      e.preventDefault();
-      moveStart(e.touches[0].clientX, e.touches[0].clientY);
+      e.preventDefault(); moveStart(e.touches[0].clientX, e.touches[0].clientY);
     }, { passive: false });
     el.addEventListener('touchmove', function(e) {
       if (phase === 'monitoring') return;
-      e.preventDefault();
-      moveTo(e.touches[0].clientX, e.touches[0].clientY);
+      e.preventDefault(); moveTo(e.touches[0].clientX, e.touches[0].clientY);
     }, { passive: false });
     el.addEventListener('mousedown', function(e) {
       if (phase === 'monitoring') return;
       if (e.target.classList.contains('rh')) return;
-      e.preventDefault();
-      moveStart(e.clientX, e.clientY);
+      e.preventDefault(); moveStart(e.clientX, e.clientY);
       function onMove(ev) { moveTo(ev.clientX, ev.clientY); }
-      function onUp() {
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-      }
+      function onUp() { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); }
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
     });
   }
 
   function makeResizable(el) {
-    var handles = el.querySelectorAll('.rh');
-    for (var i = 0; i < handles.length; i++) {
-      attachResizeHandle(el, handles[i]);
-    }
+    var hs = el.querySelectorAll('.rh');
+    for (var i = 0; i < hs.length; i++) attachResizeHandle(el, hs[i]);
   }
 
   function attachResizeHandle(el, h) {
     var corner = h.dataset.corner;
     function onMove(cx, cy) {
-      var wr = wrap.getBoundingClientRect();
-      var er = el.getBoundingClientRect();
+      var wr = wrap.getBoundingClientRect(), er = el.getBoundingClientRect();
       var MIN = 60, MINH = 50;
-      var left = er.left - wr.left;
-      var top = er.top - wr.top;
-      var right = er.right - wr.left;
-      var bottom = er.bottom - wr.top;
-      if (corner === 'br') { right = cx - wr.left; bottom = cy - wr.top; }
-      if (corner === 'bl') { left = cx - wr.left; bottom = cy - wr.top; }
-      if (corner === 'tr') { right = cx - wr.left; top = cy - wr.top; }
-      if (corner === 'tl') { left = cx - wr.left; top = cy - wr.top; }
-      if (right - left < MIN) { if (corner === 'bl' || corner === 'tl') { left = right - MIN; } else { right = left + MIN; } }
-      if (bottom - top < MINH) { if (corner === 'tl' || corner === 'tr') { top = bottom - MINH; } else { bottom = top + MINH; } }
-      left = Math.max(0, left); top = Math.max(0, top);
-      right = Math.min(wr.width, right); bottom = Math.min(wr.height, bottom);
-      el.style.left = (left / wr.width * 100) + '%';
-      el.style.top = (top / wr.height * 100) + '%';
-      el.style.width = ((right - left) / wr.width * 100) + '%';
-      el.style.height = ((bottom - top) / wr.height * 100) + '%';
+      var L = er.left - wr.left, T = er.top - wr.top;
+      var R = er.right - wr.left, B = er.bottom - wr.top;
+      if (corner === 'br') { R = cx - wr.left; B = cy - wr.top; }
+      if (corner === 'bl') { L = cx - wr.left; B = cy - wr.top; }
+      if (corner === 'tr') { R = cx - wr.left; T = cy - wr.top; }
+      if (corner === 'tl') { L = cx - wr.left; T = cy - wr.top; }
+      if (R - L < MIN)  { if (corner === 'bl' || corner === 'tl') { L = R - MIN; }  else { R = L + MIN; } }
+      if (B - T < MINH) { if (corner === 'tl' || corner === 'tr') { T = B - MINH; } else { B = T + MINH; } }
+      L = Math.max(0, L); T = Math.max(0, T);
+      R = Math.min(wr.width, R); B = Math.min(wr.height, B);
+      el.style.left   = (L / wr.width  * 100) + '%';
+      el.style.top    = (T / wr.height * 100) + '%';
+      el.style.width  = ((R - L) / wr.width  * 100) + '%';
+      el.style.height = ((B - T) / wr.height * 100) + '%';
     }
     h.addEventListener('touchstart', function(e) {
       if (phase === 'monitoring') return;
@@ -260,184 +521,13 @@ video{width:100%;height:100%;object-fit:cover;}
       if (phase === 'monitoring') return;
       e.preventDefault(); e.stopPropagation();
       function onMm(ev) { onMove(ev.clientX, ev.clientY); }
-      function onMu() {
-        document.removeEventListener('mousemove', onMm);
-        document.removeEventListener('mouseup', onMu);
-      }
+      function onMu() { document.removeEventListener('mousemove', onMm); document.removeEventListener('mouseup', onMu); }
       document.addEventListener('mousemove', onMm);
       document.addEventListener('mouseup', onMu);
     });
   }
 
-  function capture(zoneEl) {
-    var wr = wrap.getBoundingClientRect();
-    var zr = zoneEl.getBoundingClientRect();
-    var sw = Math.round((zr.width / wr.width) * video.videoWidth);
-    var sh = Math.round((zr.height / wr.height) * video.videoHeight);
-    var sx = Math.round(((zr.left - wr.left) / wr.width) * video.videoWidth);
-    var sy = Math.round(((zr.top - wr.top) / wr.height) * video.videoHeight);
-    if (sw < 1 || sh < 1) return null;
-    canvas.width = sw; canvas.height = sh;
-    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
-    return ctx.getImageData(0, 0, sw, sh);
-  }
-
-  function pixelDiff(a, b) {
-    if (!a || !b || a.data.length !== b.data.length) return 0;
-    var diff = 0, len = a.data.length;
-    for (var i = 0; i < len; i += 4) {
-      diff += Math.abs(a.data[i] - b.data[i]);
-      diff += Math.abs(a.data[i+1] - b.data[i+1]);
-      diff += Math.abs(a.data[i+2] - b.data[i+2]);
-    }
-    return diff / (len / 4);
-  }
-
-  function threshold() {
-    return 8 - (parseInt(sensEl.value) - 1) * 0.72;
-  }
-
-  function calibrateZone(n) {
-    if (n === 1) {
-      ref1 = capture(document.getElementById('zone1'));
-      setZone(1, 'cal'); setState(1, 'cal', 'Zona 1 calibrada');
-      document.getElementById('icon1').textContent = 'OK';
-      document.getElementById('btnCal2').disabled = false;
-    } else {
-      ref2 = capture(document.getElementById('zone2'));
-      setZone(2, 'cal'); setState(2, 'cal', 'Zona 2 calibrada');
-      document.getElementById('icon2').textContent = 'OK';
-      startMonitoring();
-    }
-  }
-
-  function startMonitoring() {
-    phase = 'monitoring';
-    setPhase('Monitorando automaticamente...');
-    document.getElementById('hint1').textContent = '';
-    document.getElementById('hint2').textContent = '';
-    setActionRow('monitoring');
-    timer = window.setInterval(check, 900);
-  }
-
-  function check() {
-    var thr = threshold();
-    var z1 = document.getElementById('zone1');
-    var z2 = document.getElementById('zone2');
-    if (ref1 && !z1ok && pixelDiff(ref1, capture(z1)) > thr) {
-      z1ok = true; setZone(1, 'ok'); setState(1, 'ok', 'Kit pegou'); vib([80]);
-    }
-    if (ref2 && !z2ok && pixelDiff(ref2, capture(z2)) > thr) {
-      z2ok = true; setZone(2, 'ok'); setState(2, 'ok', 'Kit colocou'); vib([80]);
-    }
-    if (z1ok && z2ok) {
-      window.clearInterval(timer);
-      showResult(true);
-    }
-  }
-
-  function stopAndCheck() {
-    window.clearInterval(timer);
-    if (!z2ok) {
-      if (!z1ok) { setZone(1, 'fail'); setState(1, 'fail', 'Kit ainda na mesa'); }
-      setZone(2, 'fail'); setState(2, 'fail', 'Kit nÃ£o colocado');
-      showResult(false);
-    } else {
-      showResult(true);
-    }
-  }
-
-  function showResult(ok) {
-    var ov = document.getElementById('resOverlay');
-    ov.className = 'result-overlay show';
-    document.getElementById('resIcon').textContent = ok ? 'â' : 'â';
-    var rt = document.getElementById('resText');
-    rt.className = 'res-text ' + (ok ? 'ok' : 'fail');
-    rt.textContent = ok ? 'EMBALAGEM OK' : 'KIT AUSENTE!';
-    var rs = document.getElementById('resSub');
-    if (ok) {
-      rs.textContent = 'Kit detectado na caixa';
-      vib([100, 50, 100]);
-      window.setTimeout(function() { ov.className = 'result-overlay'; resetForNext(); }, 2500);
-    } else {
-      rs.innerHTML = 'Verifique antes de fechar<br><button onclick="window._app.resetForNext()" style="margin-top:14px;padding:10px 28px;border-radius:10px;background:#222;color:white;border:1px solid #444;font-size:14px;font-weight:700">Corrigir</button>';
-      vib([600]);
-    }
-  }
-
-  function resetForNext() {
-    document.getElementById('resOverlay').className = 'result-overlay';
-    z1ok = false; z2ok = false;
-    setZone(1, ''); setZone(2, '');
-    setState(1, 'cal', 'Aguardando...');
-    setState(2, 'cal', 'Aguardando...');
-    document.getElementById('icon1').textContent = '\u{1F526}';
-    document.getElementById('icon2').textContent = '\u{1F56B}';
-    setPhase('Monitorando - prÃ³xima embalagem');
-    timer = window.setInterval(check, 900);
-  }
-
-  function resetAll() {
-    window.clearInterval(timer);
-    ref1 = null; ref2 = null;
-    z1ok = false; z2ok = false;
-    phase = 'setup';
-    document.getElementById('resOverlay').className = 'result-overlay';
-    setZone(1, ''); setZone(2, '');
-    setState(1, '', 'Aguardando calibraÃ§Ã£o');
-    setState(2, '', 'Aguardando calibraÃ§Ã£o');
-    document.getElementById('icon1').textContent = '\u{1F526}';
-    document.getElementById('icon2').textContent = '\u{1F56B}';
-    document.getElementById('hint1').textContent = 'arrastar';
-    document.getElementById('hint2').textContent = 'arrastar';
-    setPhase('Posicione as zonas e calibre');
-    setActionRow('calibrate');
-  }
-
-  function setActionRow(mode) {
-    var row = document.getElementById('actionRow');
-    if (mode === 'calibrate') {
-      row.innerHTML = '<button class="btn btn-orange" id="btnCal1" onclick="window._app.calibrateZone(1)">Calibrar Zona 1</button><button class="btn btn-blue" id="btnCal2" onclick="window._app.calibrateZone(2)" disabled>Calibrar Zona 2</button>';
-    } else {
-      row.innerHTML = '<button class="btn btn-red" onclick="window._app.stopAndCheck()">Fechar caixa agora</button><button class="btn btn-gray" onclick="window._app.resetAll()">Reiniciar</button>';
-    }
-  }
-
-  function setZone(n, state) {
-    var z = document.getElementById('zone' + n);
-    z.className = 'zone' + (state ? ' ' + state : '');
-    var icon = document.getElementById('icon' + n);
-    if (state === 'ok') icon.textContent = 'OK';
-    else if (state === 'fail') icon.textContent = '!';
-    else if (state === 'cal') icon.textContent = 'OK';
-    else icon.textContent = n === 1 ? '\u{1F526}' : '\u{1F56B}';
-  }
-
-  function setState(n, cls, text) {
-    var dot = document.getElementById('dot' + n);
-    dot.className = 'dot ' + (cls === 'ok' ? 'ok' : cls === 'fail' ? 'fail' : 'd' + n);
-    var card = document.getElementById('card' + n);
-    card.className = 'zone-card' + (cls === 'ok' ? ' ok' : cls === 'fail' ? ' fail' : '');
-    var s = document.getElementById('state' + n);
-    s.className = 'card-state' + (cls ? ' ' + cls : '');
-    s.textContent = text;
-  }
-
-  function setPhase(t) {
-    document.getElementById('phaseLabel').textContent = t;
-  }
-
-  function vib(p) {
-    if (navigator.vibrate) navigator.vibrate(p);
-  }
-
-  window._app = {
-    calibrateZone: calibrateZone,
-    stopAndCheck: stopAndCheck,
-    resetAll: resetAll,
-    resetForNext: resetForNext
-  };
-
+  window._app = { goCalibrate:goCalibrate, captureEmpty:captureEmpty, captureKit:captureKit, startMonitoring:startMonitoring, stopAndCheck:stopAndCheck, resetAll:resetAll, resetForNext:resetForNext };
   window.startCamera = startCamera;
   window.retryCamera = retryCamera;
 })();
